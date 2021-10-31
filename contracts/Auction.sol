@@ -27,6 +27,7 @@ contract Auction {
     //every auction has its own ID, so every auction has an array recording all the bids
     mapping(uint256 => Bid[]) auction_bids;
 
+    //create a new Auction
     function createAuction(
         string memory auction_name,
         uint256 begin_price,
@@ -50,10 +51,32 @@ contract Auction {
     // }
 
     function bid(uint256 auctionID) public payable {
-        require(block.timestamp <= auction_array[auctionID].end_time);
+        require(
+            block.timestamp <= auction_array[auctionID].end_time,
+            "Auction ended"
+        );
+        uint256 last = auction_bids[auctionID].length;
+        if (last > 0) {
+            require(
+                msg.value > auction_bids[auctionID][last - 1].value,
+                "You need to offer a higher price"
+            );
+        }
         Bid memory newBid;
         newBid.from = msg.sender;
         newBid.value = msg.value;
         auction_bids[auctionID].push(newBid);
+        //so auction_bids[auctionID] is of ascending order
+    }
+
+    //the highest bidder need to endAuction to claim the NFT
+    function endAuction(uint256 auctionID) public {
+        require(
+            block.timestamp > auction_array[auctionID].end_time,
+            "Auction not yet ended"
+        );
+        require(!auction_array[auctionID].is_ended, "NFT has been claimed");
+        auction_array[auctionID].is_ended = true;
+        //TODO:transfer the ownership of NFT
     }
 }
