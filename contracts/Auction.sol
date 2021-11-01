@@ -79,4 +79,42 @@ contract Auction {
         auction_array[auctionID].is_ended = true;
         //TODO:transfer the ownership of NFT
     }
+
+    //get the auction number
+    function getAuctionCount() public view returns (uint256) {
+        return auction_array.length;
+    }
+
+    //get the number of bids on an particular auction
+    function getBidCount(uint256 auctionID) public view returns (uint256) {
+        return auction_bids[auctionID].length;
+    }
+
+    //get the auctions of a user
+    function getMyAuction(address user) public view returns (uint256[] memory) {
+        return auction_owners[user];
+    }
+
+    //get Auction info by auctionID
+    function getAuctionInfo(uint256 auctionID)
+        public
+        view
+        returns (
+            string memory name,
+            address payable beneficiary,
+            uint256 start_price,
+            uint256 hightest_price,
+            uint256 end_time,
+            bool is_ended
+        )
+    {
+        return (
+            auction_array[auctionID].name,
+            auction_array[auctionID].beneficiary,
+            auction_array[auctionID].start_price,
+            auction_array[auctionID].hightest_price,
+            auction_array[auctionID].end_time,
+            auction_array[auctionID].is_ended
+        );
+    }
 }

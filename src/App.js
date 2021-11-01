@@ -1,31 +1,57 @@
 import React, { Component } from "react";
-import Web3 from "web3";
+import Home from './ui/ui'
 import "./App.css"
 
+let web3 = require('./util/initWeb3')
+let auctionInstance = require('./eth/auction')
+let NFTinstance = require('./eth/auctionNFT')
+
 class App extends Component{
-  componentWillMount() {
+  //pass to ui props
+  constructor(props) {
+    super(props);
+    this.state = {
+      account: '',
+
+    }
+  }
+
+  componentDidMount() {
+  }
+
+  async componentWillMount() {
     this.loadBlockchainData()
   }
 
   async loadBlockchainData()
   {
-    const web3 = new Web3( "http://localhost:8545")
-    const accounts = await web3.eth.getAccounts();
-    const ver = await web3.version;
-    this.setState({ account1: accounts[0],account2:accounts[1],version:ver })
-  }
-
-  constructor(props) {
-    super(props);
-    this.state = {account:''}
+    let accounts = await web3.eth.getAccounts();
+    this.setState({ account: accounts[0] })
   }
 
   render() {
     return (
-      <div className="container">
-        <h1l>hello world</h1l>
-        <p>your account: {this.state.account1},{this.state.account2}</p>
-        <p>version: {this.state.version}</p>
+      <div>
+        <p>hello {this.state.account}</p>
+        <p>铸造NFT</p>
+        
+        
+        <form onSubmit={(event) => {
+          event.preventDefault()
+          var price = document.getElementById("p").value 
+          var limit = document.getElementById("i").value 
+          this.state.contract.methods.addArtItem(price, this.state.ipfsHash, limit).send({ from: this.state.account }) 
+        }}>
+          <label>
+          Price:
+          <input id="p" type="number" name="price" />
+          </label>
+          <label>
+            Increment
+          <input id="i" type="number" name="limit" />
+          </label>
+          <input type='submit' />
+        </form>  
       </div>
     );
   }
