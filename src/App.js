@@ -1,82 +1,127 @@
 import React, { Component } from "react";
-import Home from './ui/ui';
+import Home from "./ui/ui";
 import "./App.css";
-const pinataApiKey = "1e57bed1d89a30e5a5a7";
-const pinataSecretApiKey = "81e1b6cf23942787bf6a8b55cd83ac96ab46a37600e48b146d0a2a55d0f4f79a";
-const axios = require("axios");
-const fs = require("fs");
-const FormData = require("form-data");
+import { create } from "ipfs-http-client";
+const ipfsAPI = require("ipfs-api");
+const ipfs = ipfsAPI({ host: "localhost", port: "5001", protocol: "http" });
 
-let web3 = require('./util/initWeb3')
-let auctionInstance = require('./eth/auction')
-let NFTinstance = require('./eth/auctionNFT')
+/**
+ * use following commands to configure ipfs
+ * ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '[\"*\"]'
+ * ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '[\"PUT\", \"GET\", \"POST\"]'
+ */
+let saveImageOnIpfs = (reader) => {
+  return new Promise(function (resolve, reject) {
+    const buffer = Buffer.from(reader.result);
+    ipfs
+      .add(buffer)
+      .then((response) => {
+        console.log(response);
+        resolve(response[0].hash);
+      })
+      .catch((err) => {
+        console.error(err);
+        reject(err);
+      });
+  });
+};
 
-class App extends Component{
+let web3 = require("./util/initWeb3");
+let auctionInstance = require("./eth/auction");
+let NFTinstance = require("./eth/auctionNFT");
+
+class App extends Component {
   //pass to ui props
   constructor(props) {
     super(props);
     this.state = {
-      account: '',
-
-    }
+      account: "",
+      imgSrc: null,
+    };
   }
 
-
-
-  pinFileToIPFS = async () => {
-  const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
-  let data = new FormData();
-  data.append("file", fs.createReadStream("./pathtoyourfile.png"));
-  const res = await axios.post(url, data, {
-    maxContentLength: "Infinity", 
-    headers: {
-      "Content-Type": `multipart/form-data; boundary=${data._boundary}`,
-      "pinata_api_key": pinataApiKey, 
-      "pinata_secret_api_key": pinataSecretApiKey,
-    },
-  });
-  console.log(res.data);
-  };
-  
-
-
-
-  componentDidMount() {
-  }
+  componentDidMount() {}
 
   async componentWillMount() {
-    this.loadBlockchainData()
+    this.loadBlockchainData();
   }
 
-  async loadBlockchainData()
-  {
+  async loadBlockchainData() {
     let accounts = await web3.eth.getAccounts();
-    this.setState({ account: accounts[0] })
+    this.setState({ account: accounts[0] });
   }
 
   render() {
     return (
       <div>
+        <Home />
         <p>hello {this.state.account}</p>
         <p>铸造NFT</p>
-        
-        
-        <form onSubmit={(event) => {
-          event.preventDefault()
-          var price = document.getElementById("p").value 
-          var limit = document.getElementById("i").value 
-          this.state.contract.methods.addArtItem(price, this.state.ipfsHash, limit).send({ from: this.state.account }) 
-        }}>
+        <p>上传图片</p>
+        <div>
+          <label id="file">Choose file to upload</label>
+          <input
+            type="file"
+            ref="file"
+            id="file"
+            name="file"
+            multiple="multiple"
+          />
+        </div>
+        <div>
+          <button
+            onClick={() => {
+              var file = this.refs.file.files[0];
+              var reader = new FileReader();
+              // reader.readAsDataURL(file);
+              reader.readAsArrayBuffer(file);
+              reader.onloadend = (e) => {
+                console.log(reader);
+                // 上传数据到IPFS
+                saveImageOnIpfs(reader).then((hash) => {
+                  console.log(hash);
+                  this.setState({ imgSrc: hash });
+                });
+              };
+            }}
+          >
+            Submit
+          </button>
+        </div>
+        {this.state.imgSrc ? (
+          <div>
+            <h2>{"http://localhost:8080/ipfs/" + this.state.imgSrc}</h2>
+            <img
+              alt="testIPFS"
+              style={{
+                width: 1600,
+              }}
+              src={"http://localhost:8080/ipfs/" + this.state.imgSrc}
+            />
+          </div>
+        ) : (
+          <p>hello IPFS</p>
+        )}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            var price = document.getElementById("p").value;
+            var limit = document.getElementById("i").value;
+            this.state.contract.methods
+              .addArtItem(price, this.state.ipfsHash, limit)
+              .send({ from: this.state.account });
+          }}
+        >
           <label>
-          Price:
-          <input id="p" type="number" name="price" />
+            Price:
+            <input id="p" type="number" name="price" />
           </label>
           <label>
             Increment
-          <input id="i" type="number" name="limit" />
+            <input id="i" type="number" name="limit" />
           </label>
-          <input type='submit' />
-        </form>  
+          <input type="submit" />
+        </form>
       </div>
     );
   }
