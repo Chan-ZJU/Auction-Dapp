@@ -5,6 +5,10 @@ import { create } from "ipfs-http-client";
 const ipfsAPI = require("ipfs-api");
 const ipfs = ipfsAPI({ host: "localhost", port: "5001", protocol: "http" });
 
+let web3 = require("./util/initWeb3");
+let auctionInstance = require("./eth/auction");
+let NFTinstance = require("./eth/auctionNFT");
+
 /**
  * use following commands to configure ipfs
  * ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '[\"*\"]'
@@ -26,9 +30,21 @@ let saveImageOnIpfs = (reader) => {
   });
 };
 
-let web3 = require("./util/initWeb3");
-let auctionInstance = require("./eth/auction");
-let NFTinstance = require("./eth/auctionNFT");
+function mintNFT(account, imgSrc) {
+  console.log(account, imgSrc);
+  try {
+    let res = NFTinstance.methods
+      .awardItem(account, imgSrc)
+      .send({ from: account, gas: "3000000" });
+    // window.location.reload();
+    alert("mint success!");
+    console.log("mint success! ID: " + res);
+    console.log("balance:" + NFTinstance.methods.balanceOf(account).call());
+  } catch (e) {
+    console.log(e);
+    alert("mint fail!");
+  }
+}
 
 class App extends Component {
   //pass to ui props
@@ -54,7 +70,7 @@ class App extends Component {
   render() {
     return (
       <div>
-        <Home />
+        <Home account={this.state.account} imgSrc={this.state.imgSrc} />
         <p>hello {this.state.account}</p>
         <p>铸造NFT</p>
         <p>上传图片</p>
@@ -81,6 +97,7 @@ class App extends Component {
                 saveImageOnIpfs(reader).then((hash) => {
                   console.log(hash);
                   this.setState({ imgSrc: hash });
+                  mintNFT(this.state.account, this.state.imgSrc);
                 });
               };
             }}
