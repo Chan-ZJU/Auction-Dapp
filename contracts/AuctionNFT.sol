@@ -9,6 +9,10 @@ contract AuctionItem is ERC721URIStorage {
     Counters.Counter private _tokenIds;
     mapping(string => uint256) hashes;
 
+    //NFTOwners[address] stores the NFT IDs he owns
+    mapping(address => uint256[]) public NFTOwners;
+    mapping(uint256 => address[]) public NFTHistory;
+
     constructor() ERC721("AuctionItem", "AITM") {}
 
     function awardItem(address recipient, string memory tokenURI)
@@ -23,6 +27,19 @@ contract AuctionItem is ERC721URIStorage {
         _mint(recipient, newItemId);
         _setTokenURI(newItemId, tokenURI);
 
+        NFTOwners[recipient].push(newItemId);
+        NFTHistory[newItemId].push(recipient);
+
         return newItemId;
+    }
+
+    function showMyNFT(address owner) public view returns (uint, string[] memory) {
+        uint num = NFTOwners[owner].length;
+        string[] memory res = new string[](num);
+        for(uint i = 0; i<num; i++)
+        {
+            res[i] = tokenURI(NFTOwners[owner][i]);
+        }
+        return (num,res);
     }
 }

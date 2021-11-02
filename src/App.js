@@ -62,20 +62,22 @@ class App extends Component {
     this.loadBlockchainData();
   }
 
+  //TODO:切换账户不会刷新，如果切换后直接mint，会提示需要账户信息
   async loadBlockchainData() {
     let accounts = await web3.eth.getAccounts();
     this.setState({ account: accounts[0] });
   }
 
   mintNFT = async () => {
-    console.log(this.state.account, this.state.imgSrc);
+    console.log(this.state.account);
+    console.log(this.state.imgSrc);
     try {
       console.log("debug");
       //TODO:没有启动私链的话会永久等待，应该报错，怎么解决
       let res = await NFTinstance.methods
         .awardItem(this.state.account, this.state.imgSrc)
         .send({ from: this.state.account, gas: "3000000" });
-      window.location.reload();
+      // window.location.reload();
       alert("mint success!");
       console.log("mint success! ID: " + res);
       console.log(
@@ -84,6 +86,26 @@ class App extends Component {
     } catch (e) {
       console.log(e);
       alert("mint fail!");
+    }
+  };
+
+  showMyNFT = async (e) => {
+    console.log("click on showMyNFT");
+    try {
+      let res = await NFTinstance.methods.showMyNFT(this.state.account).call();
+      console.log(res[0]);
+      console.log(res[1][0]);
+      if (res[0] != 0) {
+        return (
+          <div>
+            <p>hello</p>
+            <img src={"http://localhost:8080/ipfs/" + res[1][0]} />
+          </div>
+        );
+      }
+    } catch (e) {
+      console.log(e);
+      alert("check my NFT fail!");
     }
   };
 
@@ -127,6 +149,9 @@ class App extends Component {
               Submit
             </button>
             <button onClick={this.mintNFT}>mint</button>
+            <div>
+              <button onClick={this.showMyNFT}>我的NFT</button>
+            </div>
           </div>
           {this.state.imgSrc ? (
             <div>
