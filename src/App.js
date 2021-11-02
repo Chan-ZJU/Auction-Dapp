@@ -7,7 +7,7 @@ const ipfs = ipfsAPI({ host: "localhost", port: "5001", protocol: "http" });
 
 let web3 = require("./util/initWeb3");
 let auctionInstance = require("./eth/auction");
-let NFTinstance = require("./eth/auctionNFT");
+// let NFTinstance = require("./eth/auctionNFT");
 
 /**
  * use following commands to configure ipfs
@@ -30,29 +30,18 @@ let saveImageOnIpfs = (reader) => {
   });
 };
 
-// function mintNFT(account, imgSrc) {
-//   console.log(account, imgSrc);
-//   try {
-//     let res = NFTinstance.methods
-//       .awardItem(account, imgSrc)
-//       .send({ from: account, gas: "3000000" });
-//     // window.location.reload();
-//     alert("mint success!");
-//     console.log("mint success! ID: " + res);
-//     console.log("balance:" + NFTinstance.methods.balanceOf(account).call());
-//   } catch (e) {
-//     console.log(e);
-//     alert("mint fail!");
-//   }
-// }
-
 class App extends Component {
   //pass to ui props
   constructor(props) {
     super(props);
     this.state = {
-      account: "",
+      account: null,
       imgSrc: null,
+      isShowMyNFT: false,
+      showMyNFT_num: 0,
+      showMyNFT_IDs: null,
+      showMyNFT_URIs: null,
+      showMyNFT_ID_URIs: null,
     };
   }
 
@@ -65,7 +54,27 @@ class App extends Component {
   //TODO:切换账户不会刷新，如果切换后直接mint，会提示需要账户信息
   async loadBlockchainData() {
     let accounts = await web3.eth.getAccounts();
-    this.setState({ account: accounts[0] });
+    let showMyNFTRes = await auctionInstance.methods
+      .showMyNFT(accounts[0])
+      .call();
+    let showMyNFTIds = showMyNFTRes[1];
+    let showMyNFTURIs = showMyNFTRes[2];
+    let showMyNFTnum = parseInt(showMyNFTRes[0]);
+    let showMyNFT_ID_URI = [];
+    for (let i = 0; i < showMyNFTnum; i++) {
+      showMyNFT_ID_URI.push({
+        ID: showMyNFTIds[i],
+        URI: showMyNFTURIs[i],
+      });
+    }
+
+    this.setState({
+      account: accounts[0],
+      showMyNFT_num: showMyNFTnum,
+      showMyNFT_IDs: showMyNFTIds,
+      showMyNFT_URIs: showMyNFTURIs,
+      showMyNFT_ID_URIs: showMyNFT_ID_URI,
+    });
   }
 
   mintNFT = async () => {
@@ -74,14 +83,15 @@ class App extends Component {
     try {
       console.log("debug");
       //TODO:没有启动私链的话会永久等待，应该报错，怎么解决
-      let res = await NFTinstance.methods
+      let res = await auctionInstance.methods
         .awardItem(this.state.account, this.state.imgSrc)
         .send({ from: this.state.account, gas: "3000000" });
       // window.location.reload();
       alert("mint success!");
       console.log("mint success! ID: " + res);
       console.log(
-        "balance:" + NFTinstance.methods.balanceOf(this.state.account).call()
+        "balance:" +
+          auctionInstance.methods.balanceOf(this.state.account).call()
       );
     } catch (e) {
       console.log(e);
@@ -89,24 +99,37 @@ class App extends Component {
     }
   };
 
-  showMyNFT = async (e) => {
-    console.log("click on showMyNFT");
-    try {
-      let res = await NFTinstance.methods.showMyNFT(this.state.account).call();
-      console.log(res[0]);
-      console.log(res[1][0]);
-      if (res[0] != 0) {
-        return (
-          <div>
-            <p>hello</p>
-            <img src={"http://localhost:8080/ipfs/" + res[1][0]} />
-          </div>
-        );
-      }
-    } catch (e) {
-      console.log(e);
-      alert("check my NFT fail!");
+  createAuction = (ID, e) => {
+    console.log(ID);
+  };
+
+  showMyNFT = () => {
+    let res = [];
+    for (let i = 0; i < this.state.showMyNFT_num; i++) {
+      res.push({
+        ID: this.state.showMyNFT_IDs[i],
+        URI: this.state.showMyNFT_URIs[i],
+      });
     }
+    console.log(res);
+
+    return (
+      <div>
+        {res.map((term) => (
+          <div>
+            <p>URI:{term.URI}</p>
+            <p>ID:{term.ID}</p>
+            <img
+              style={{ height: 180, width: 320 }}
+              src={"http://localhost:8080/ipfs/" + term.URI}
+            />
+            <button onClick={this.createAuction.bind(this, term.ID)}>
+              拍卖
+            </button>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   render() {
@@ -149,24 +172,35 @@ class App extends Component {
               Submit
             </button>
             <button onClick={this.mintNFT}>mint</button>
+            {this.state.imgSrc ? (
+              <div>
+                <h2>{"http://localhost:8080/ipfs/" + this.state.imgSrc}</h2>
+                <img
+                  alt="testIPFS"
+                  style={{
+                    height: 120,
+                    width: 160,
+                  }}
+                  src={"http://localhost:8080/ipfs/" + this.state.imgSrc}
+                />
+              </div>
+            ) : (
+              <p>hello IPFS, no image uploaded</p>
+            )}
             <div>
-              <button onClick={this.showMyNFT}>我的NFT</button>
-            </div>
-          </div>
-          {this.state.imgSrc ? (
-            <div>
-              <h2>{"http://localhost:8080/ipfs/" + this.state.imgSrc}</h2>
-              <img
-                alt="testIPFS"
-                style={{
-                  width: 1600,
+              <button
+                onClick={() => {
+                  console.log("click showMyNFT");
+                  this.setState({ isShowMyNFT: true });
+                  console.log(this.state.isShowMyNFT);
                 }}
-                src={"http://localhost:8080/ipfs/" + this.state.imgSrc}
-              />
+              >
+                我的NFT
+              </button>
             </div>
-          ) : (
-            <p>hello IPFS, no image uploaded</p>
-          )}
+            <div>{this.state.isShowMyNFT ? this.showMyNFT() : null}</div>
+          </div>
+
           <form
             onSubmit={(event) => {
               event.preventDefault();
