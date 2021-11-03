@@ -1,4 +1,5 @@
 //SPDX-License-Identifier: MIT
+// pragma experimental ABIEncoderV2;
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
@@ -39,15 +40,18 @@ contract Auction is ERC721URIStorage {
         returns (
             uint256,
             uint256[] memory,
-            string[] memory
+            string[] memory,
+            bool[] memory
         )
     {
         uint256 num = NFTOwners[owner].length;
         string[] memory res = new string[](num);
+        bool[] memory isAuctioned = new bool[](num);
         for (uint256 i = 0; i < num; i++) {
             res[i] = tokenURI(NFTOwners[owner][i]);
+            isAuctioned[i] = isNFTAuctioned[NFTOwners[owner][i]];
         }
-        return (num, NFTOwners[owner], res);
+        return (num, NFTOwners[owner], res, isAuctioned);
     }
 
     function tokenID(string memory URI) public view returns (uint256) {
@@ -80,6 +84,9 @@ contract Auction is ERC721URIStorage {
     //the array to store all the auctions(include ongoing and ended auctions)
     Auction_struct[] public auction_array;
 
+    mapping(uint256 => bool) public isNFTAuctioned;
+    mapping(uint256 => uint256) public NFT_MapTo_AuctionID;
+
     //every bid has a from address and a value
     struct Bid {
         address from;
@@ -98,6 +105,8 @@ contract Auction is ERC721URIStorage {
         require(msg.sender == ownerOf(nftID), "You are not user of the NFT!");
         Auction_struct memory newAuction;
         newAuction.NFTid = nftID;
+        NFT_MapTo_AuctionID[nftID] = auction_array.length;
+        isNFTAuctioned[nftID] = true;
         newAuction.beneficiary = payable(msg.sender);
         newAuction.start_price = begin_price;
         newAuction.highest_price = begin_price;
@@ -107,46 +116,112 @@ contract Auction is ERC721URIStorage {
         auction_array.push(newAuction);
     }
 
-    function viewMyAllAuction(address user)
+    function viewMyAllAuction_URI_price(address user)
         public
         view
-        returns (Show_Auction_Struct[] memory)
+        returns (
+            string[] memory,
+            uint256[] memory,
+            uint256[] memory
+        )
     {
         uint256 count = auction_owners[user].length;
-        Show_Auction_Struct[] memory All = new Show_Auction_Struct[](count);
-        Show_Auction_Struct memory curr;
+        string[] memory URI = new string[](count);
+        uint256[] memory start_price = new uint256[](count);
+        uint256[] memory highest_price = new uint256[](count);
+
+        // Show_Auction_Struct memory curr;
         for (uint256 i = 0; i < count; i++) {
             uint256 auction_id = auction_owners[user][i];
             Auction_struct memory curr_auction = auction_array[auction_id];
-            curr.URI = tokenURI(curr_auction.NFTid);
-            curr.start_price = curr_auction.start_price;
-            curr.highest_price = curr_auction.highest_price;
-            curr.end_time = curr_auction.end_time;
-            curr.is_ended = curr_auction.is_ended;
-            curr.auctionID = auction_id;
-            All[i] = curr;
+            URI[i] = tokenURI(curr_auction.NFTid);
+            start_price[i] = curr_auction.start_price;
+            highest_price[i] = curr_auction.highest_price;
+
+            // All[i] = curr;
         }
-        return All;
+        return (URI, start_price, highest_price);
     }
 
-    function ViewAllAuction()
+    function viewMyAllAuction_time_isended_auctionID(address user)
         public
         view
-        returns (Show_Auction_Struct[] memory)
+        returns (
+            uint256[] memory,
+            bool[] memory,
+            uint256[] memory
+        )
+    {
+        uint256 count = auction_owners[user].length;
+        uint256[] memory end_time = new uint256[](count);
+        bool[] memory is_ended = new bool[](count);
+        uint256[] memory auctionID = new uint256[](count);
+
+        // Show_Auction_Struct memory curr;
+        for (uint256 i = 0; i < count; i++) {
+            uint256 auction_id = auction_owners[user][i];
+            Auction_struct memory curr_auction = auction_array[auction_id];
+            end_time[i] = curr_auction.end_time;
+            is_ended[i] = curr_auction.is_ended;
+            auctionID[i] = auction_id;
+
+            // All[i] = curr;
+        }
+        return (end_time, is_ended, auctionID);
+    }
+
+    function viewAllAuction_URI_price()
+        public
+        view
+        returns (
+            string[] memory,
+            uint256[] memory,
+            uint256[] memory
+        )
     {
         uint256 count = auction_array.length;
-        Show_Auction_Struct[] memory All = new Show_Auction_Struct[](count);
-        Show_Auction_Struct memory curr;
+        string[] memory URI = new string[](count);
+        uint256[] memory start_price = new uint256[](count);
+        uint256[] memory highest_price = new uint256[](count);
+
+        // Show_Auction_Struct memory curr;
         for (uint256 i = 0; i < count; i++) {
-            curr.URI = tokenURI(auction_array[i].NFTid);
-            curr.start_price = auction_array[i].start_price;
-            curr.highest_price = auction_array[i].highest_price;
-            curr.end_time = auction_array[i].end_time;
-            curr.is_ended = auction_array[i].is_ended;
-            curr.auctionID = i;
-            All[i] = curr;
+            uint256 auction_id = i;
+            Auction_struct memory curr_auction = auction_array[auction_id];
+            URI[i] = tokenURI(curr_auction.NFTid);
+            start_price[i] = curr_auction.start_price;
+            highest_price[i] = curr_auction.highest_price;
+
+            // All[i] = curr;
         }
-        return All;
+        return (URI, start_price, highest_price);
+    }
+
+    function viewAllAuction_time_isended_auctionID()
+        public
+        view
+        returns (
+            uint256[] memory,
+            bool[] memory,
+            uint256[] memory
+        )
+    {
+        uint256 count = auction_array.length;
+        uint256[] memory end_time = new uint256[](count);
+        bool[] memory is_ended = new bool[](count);
+        uint256[] memory auctionID = new uint256[](count);
+
+        // Show_Auction_Struct memory curr;
+        for (uint256 i = 0; i < count; i++) {
+            uint256 auction_id = i;
+            Auction_struct memory curr_auction = auction_array[auction_id];
+            end_time[i] = curr_auction.end_time;
+            is_ended[i] = curr_auction.is_ended;
+            auctionID[i] = auction_id;
+
+            // All[i] = curr;
+        }
+        return (end_time, is_ended, auctionID);
     }
 
     function bid(uint256 auctionID) public payable {

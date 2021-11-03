@@ -129,45 +129,19 @@ let abi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "ViewAllAuction",
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "NFT_MapTo_AuctionID",
     outputs: [
       {
-        components: [
-          {
-            internalType: "uint256",
-            name: "auctionID",
-            type: "uint256",
-          },
-          {
-            internalType: "string",
-            name: "URI",
-            type: "string",
-          },
-          {
-            internalType: "uint256",
-            name: "start_price",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "highest_price",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "end_time",
-            type: "uint256",
-          },
-          {
-            internalType: "bool",
-            name: "is_ended",
-            type: "bool",
-          },
-        ],
-        internalType: "struct Auction.Show_Auction_Struct[]",
+        internalType: "uint256",
         name: "",
-        type: "tuple[]",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -490,6 +464,25 @@ let abi = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "isNFTAuctioned",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "name",
     outputs: [
@@ -615,6 +608,11 @@ let abi = [
         name: "",
         type: "string[]",
       },
+      {
+        internalType: "bool[]",
+        name: "",
+        type: "bool[]",
+      },
     ],
     stateMutability: "view",
     type: "function",
@@ -713,6 +711,52 @@ let abi = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "viewAllAuction_URI_price",
+    outputs: [
+      {
+        internalType: "string[]",
+        name: "",
+        type: "string[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "viewAllAuction_time_isended_auctionID",
+    outputs: [
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+      {
+        internalType: "bool[]",
+        name: "",
+        type: "bool[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "address",
@@ -720,50 +764,57 @@ let abi = [
         type: "address",
       },
     ],
-    name: "viewMyAllAuction",
+    name: "viewMyAllAuction_URI_price",
     outputs: [
       {
-        components: [
-          {
-            internalType: "uint256",
-            name: "auctionID",
-            type: "uint256",
-          },
-          {
-            internalType: "string",
-            name: "URI",
-            type: "string",
-          },
-          {
-            internalType: "uint256",
-            name: "start_price",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "highest_price",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "end_time",
-            type: "uint256",
-          },
-          {
-            internalType: "bool",
-            name: "is_ended",
-            type: "bool",
-          },
-        ],
-        internalType: "struct Auction.Show_Auction_Struct[]",
+        internalType: "string[]",
         name: "",
-        type: "tuple[]",
+        type: "string[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+    ],
+    name: "viewMyAllAuction_time_isended_auctionID",
+    outputs: [
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+      {
+        internalType: "bool[]",
+        name: "",
+        type: "bool[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
       },
     ],
     stateMutability: "view",
     type: "function",
   },
 ];
-let address = "0x728Bfc76307bF47d03720FBC23Ad589294407f22";
+let address = "0xeF5304B63398268A7c743d8635f7b6b479ad2b12";
 let contractAuctionInstance = new web3.eth.Contract(abi, address);
 module.exports = contractAuctionInstance;

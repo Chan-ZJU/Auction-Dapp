@@ -37,11 +37,30 @@ class App extends Component {
     this.state = {
       account: null,
       imgSrc: null,
+
       isShowMyNFT: false,
       showMyNFT_num: 0,
       showMyNFT_IDs: null,
       showMyNFT_URIs: null,
-      showMyNFT_ID_URIs: null,
+      showMyNFT_isAuctioned: null,
+
+      isShowMyOngoingNFT: false,
+      showMyOngingNFT_num: 0,
+      showMyOngingNFT_URIs: null,
+      showMyOngingNFT_start_prices: null,
+      showMyOngingNFT_highest_prices: null,
+      showMyOngingNFT_end_times: null,
+      showMyOngingNFT_is_endeds: null,
+      showMyOngingNFT_auctionIDs: null,
+
+      isShowNFTMarket: false,
+      showMarketNFT_num: 0,
+      showMarketNFT_URIs: null,
+      showMarketNFT_start_prices: null,
+      showMarketNFT_highest_prices: null,
+      showMarketNFT_end_times: null,
+      showMarketNFT_is_endeds: null,
+      showMarketNFT_auctionIDs: null,
     };
   }
 
@@ -53,29 +72,83 @@ class App extends Component {
 
   //TODO:切换账户不会刷新，如果切换后直接mint，会提示需要账户信息
   async loadBlockchainData() {
+    console.log("load blockchain data");
     let accounts = await web3.eth.getAccounts();
+
     let showMyNFTRes = await auctionInstance.methods
       .showMyNFT(accounts[0])
       .call();
+    console.log(showMyNFTRes);
     let showMyNFTIds = showMyNFTRes[1];
     let showMyNFTURIs = showMyNFTRes[2];
     let showMyNFTnum = parseInt(showMyNFTRes[0]);
-    let showMyNFT_ID_URI = [];
-    for (let i = 0; i < showMyNFTnum; i++) {
-      showMyNFT_ID_URI.push({
-        ID: showMyNFTIds[i],
-        URI: showMyNFTURIs[i],
-      });
-    }
+    let showMyNFTIsAuctioned = showMyNFTRes[3];
+
+    let isShowMyOngoingNFTRes1 = await auctionInstance.methods
+      .viewMyAllAuction_URI_price(accounts[0])
+      .call();
+    console.log(isShowMyOngoingNFTRes1);
+    let isShowMyOngoingNFTRes2 = await auctionInstance.methods
+      .viewMyAllAuction_time_isended_auctionID(accounts[0])
+      .call();
+    console.log(isShowMyOngoingNFTRes2);
+    let showMyOngingNFTURIs = isShowMyOngoingNFTRes1[0];
+    let showMyOngingNFTnums = showMyOngingNFTURIs.length;
+    let showMyOngingNFTstart_prices = isShowMyOngoingNFTRes1[1];
+    let showMyOngingNFThighest_prices = isShowMyOngoingNFTRes1[2];
+    let showMyOngingNFTendTimes = isShowMyOngoingNFTRes2[0];
+    let showMyOngingNFTisendeds = isShowMyOngoingNFTRes2[1];
+    let showMyOngingNFTauctionIDs = isShowMyOngoingNFTRes2[2];
+
+    let isShowMarketNFTRes1 = await auctionInstance.methods
+      .viewAllAuction_URI_price()
+      .call();
+    console.log(isShowMarketNFTRes1);
+    let isShowMarketNFTRes2 = await auctionInstance.methods
+      .viewAllAuction_time_isended_auctionID()
+      .call();
+    console.log(isShowMarketNFTRes2);
+    let showMarketNFTURIs = isShowMarketNFTRes1[0];
+    let showMarketNFTnums = showMarketNFTURIs.length;
+    let showMarketNFTstart_prices = isShowMarketNFTRes1[1];
+    let showMarketNFThighest_prices = isShowMarketNFTRes1[2];
+    let showMarketNFTendTimes = isShowMarketNFTRes2[0];
+    let showMarketNFTisendeds = isShowMarketNFTRes2[1];
+    let showMarketNFTauctionIDs = isShowMarketNFTRes2[2];
 
     this.setState({
       account: accounts[0],
+
       showMyNFT_num: showMyNFTnum,
       showMyNFT_IDs: showMyNFTIds,
       showMyNFT_URIs: showMyNFTURIs,
-      showMyNFT_ID_URIs: showMyNFT_ID_URI,
+      showMyNFT_isAuctioned: showMyNFTIsAuctioned,
+
+      showMyOngingNFT_num: showMyOngingNFTnums,
+      showMyOngingNFT_URIs: showMyOngingNFTURIs,
+      showMyOngingNFT_auctionIDs: showMyOngingNFTauctionIDs,
+      showMyOngingNFT_end_times: showMyOngingNFTendTimes,
+      showMyOngingNFT_highest_prices: showMyOngingNFThighest_prices,
+      showMyOngingNFT_is_endeds: showMyOngingNFTisendeds,
+      showMyOngingNFT_start_prices: showMyOngingNFTstart_prices,
+
+      showMarketNFT_num: showMarketNFTnums,
+      showMarketNFT_URIs: showMarketNFTURIs,
+      showMarketNFT_auctionIDs: showMarketNFTauctionIDs,
+      showMarketNFT_end_times: showMarketNFTendTimes,
+      showMarketNFT_highest_prices: showMarketNFThighest_prices,
+      showMarketNFT_is_endeds: showMarketNFTisendeds,
+      showMarketNFT_start_prices: showMarketNFTstart_prices,
     });
   }
+
+  resetAll = () => {
+    this.setState({
+      isShowMyNFT: false,
+      isShowMyOngoingNFT: false,
+      isShowNFTMarket: false,
+    });
+  };
 
   mintNFT = async () => {
     console.log(this.state.account);
@@ -88,6 +161,7 @@ class App extends Component {
         .send({ from: this.state.account, gas: "3000000" });
       // window.location.reload();
       alert("mint success!");
+      window.location.reload();
       console.log("mint success! ID: " + res);
       console.log(
         "balance:" +
@@ -99,16 +173,31 @@ class App extends Component {
     }
   };
 
-  createAuction = (ID, e) => {
-    console.log(ID);
+  createAuction = async (term, e) => {
+    e.preventDefault();
+    console.log(term);
+    var price = document.getElementById("price").value;
+    var time = document.getElementById("time").value;
+    console.log(price, time);
+    try {
+      let res = await auctionInstance.methods
+        .createAuction(term.ID, price, time)
+        .send({ from: this.state.account, gas: "3000000" });
+      alert("create auction success!");
+      window.location.reload();
+    } catch (e) {
+      console.log(e);
+      alert("create auction fail!");
+    }
   };
 
   showMyNFT = () => {
     let res = [];
     for (let i = 0; i < this.state.showMyNFT_num; i++) {
       res.push({
-        ID: this.state.showMyNFT_IDs[i],
+        NFT_ID: this.state.showMyNFT_IDs[i],
         URI: this.state.showMyNFT_URIs[i],
+        isAuctioned: this.state.showMyNFT_isAuctioned[i],
       });
     }
     console.log(res);
@@ -118,18 +207,99 @@ class App extends Component {
         {res.map((term) => (
           <div>
             <p>URI:{term.URI}</p>
-            <p>ID:{term.ID}</p>
+            <p>ID:{term.NFT_ID}</p>
             <img
               style={{ height: 180, width: 320 }}
               src={"http://localhost:8080/ipfs/" + term.URI}
             />
-            <button onClick={this.createAuction.bind(this, term.ID)}>
-              拍卖
-            </button>
+            {!term.isAuctioned ? (
+              <form onSubmit={this.createAuction.bind(this, term)}>
+                <label>
+                  拍卖起价:
+                  <input id="price" type="number" name="price" />
+                </label>
+                <br />
+                <label>
+                  持续时间（秒）：
+                  <input id="time" type="number" name="time" />
+                </label>
+                <input type="submit" value="拍卖" />
+              </form>
+            ) : null}
           </div>
         ))}
       </div>
     );
+  };
+
+  showMyOngingNFT = () => {
+    let res = [];
+
+    for (let i = 0; i < this.state.showMyOngingNFT_num; i++) {
+      res.push({
+        URI: this.state.showMyOngingNFT_URIs[i],
+        start_price: this.state.showMyOngingNFT_start_prices[i],
+        highest_price: this.state.showMyOngingNFT_highest_prices[i],
+        is_ended: this.state.showMyOngingNFT_is_endeds[i],
+        end_time: this.state.showMyOngingNFT_end_times[i],
+        auction_ID: this.state.showMyOngingNFT_auctionIDs[i],
+      });
+    }
+    console.log(res);
+    return res ? (
+      <div>
+        {res.map((term) => (
+          <div>
+            <p>URI:{term.URI}</p>
+            <p>auction_ID:{term.auction_ID}</p>
+            <p>
+              起价: {term.start_price} 最高价: {term.highest_price}
+            </p>
+            <p>结束时间: {term.end_time}</p>
+            <p>{term.is_ended ? "已结束" : "未结束"}</p>
+            <img
+              style={{ height: 180, width: 320 }}
+              src={"http://localhost:8080/ipfs/" + term.URI}
+            />
+          </div>
+        ))}
+      </div>
+    ) : null;
+  };
+
+  showNFTMarket = () => {
+    let res = [];
+
+    for (let i = 0; i < this.state.showMarketNFT_num; i++) {
+      res.push({
+        URI: this.state.showMarketNFT_URIs[i],
+        start_price: this.state.showMarketNFT_start_prices[i],
+        highest_price: this.state.showMarketNFT_highest_prices[i],
+        is_ended: this.state.showMarketNFT_is_endeds[i],
+        end_time: this.state.showMarketNFT_end_times[i],
+        auction_ID: this.state.showMarketNFT_auctionIDs[i],
+      });
+    }
+    console.log(res);
+    return res ? (
+      <div>
+        {res.map((term) => (
+          <div>
+            <p>URI:{term.URI}</p>
+            <p>auction_ID:{term.auction_ID}</p>
+            <p>
+              起价: {term.start_price} 最高价: {term.highest_price}
+            </p>
+            <p>结束时间: {term.end_time}</p>
+            <p>{term.is_ended ? "已结束" : "未结束"}</p>
+            <img
+              style={{ height: 180, width: 320 }}
+              src={"http://localhost:8080/ipfs/" + term.URI}
+            />
+          </div>
+        ))}
+      </div>
+    ) : null;
   };
 
   render() {
@@ -190,37 +360,44 @@ class App extends Component {
             <div>
               <button
                 onClick={() => {
+                  this.resetAll();
                   console.log("click showMyNFT");
                   this.setState({ isShowMyNFT: true });
                   console.log(this.state.isShowMyNFT);
                 }}
               >
-                我的NFT
+                我铸造的NFT
+              </button>
+              <button
+                onClick={() => {
+                  this.resetAll();
+                  console.log("click showMyOngingNFT");
+                  this.setState({ isShowMyOngoingNFT: true });
+                }}
+              >
+                我的NFT拍卖详情
+              </button>
+              <button
+                onClick={() => {
+                  this.resetAll();
+                  console.log("click show NFT market");
+                  this.setState({ isShowNFTMarket: true });
+                }}
+              >
+                NFT市场
               </button>
             </div>
+            {/* 下面是我铸造的NFT的内容 */}
             <div>{this.state.isShowMyNFT ? this.showMyNFT() : null}</div>
+            {/* 下面是我所有拍卖的NFT的内容 */}
+            <div>
+              {this.state.isShowMyOngoingNFT ? this.showMyOngingNFT() : null}
+            </div>
+            {/* 下面是NFT市场的内容 */}
+            <div>
+              {this.state.isShowNFTMarket ? this.showNFTMarket() : null}
+            </div>
           </div>
-
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              var price = document.getElementById("p").value;
-              var limit = document.getElementById("i").value;
-              this.state.contract.methods
-                .addArtItem(price, this.state.ipfsHash, limit)
-                .send({ from: this.state.account });
-            }}
-          />
-          <label>
-            Price:
-            <input id="p" type="number" name="price" />
-          </label>
-          <label>
-            Increment
-            <input id="i" type="number" name="limit" />
-          </label>
-          <input type="submit" />
-          {/* </form> */}
         </div>
       </div>
     );

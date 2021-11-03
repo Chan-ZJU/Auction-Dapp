@@ -4,7 +4,6 @@ import { Button, Card, Icon, Image, Statistic } from "semantic-ui-react";
 
 const Home = (props) => (
   <Card>
-    <h1l>hello world</h1l>
     <p>your account: {props.account}</p>
     <div>
       <p>hello {props.account}</p>
