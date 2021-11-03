@@ -7,8 +7,6 @@ const Home = (props) => (
     <p>your account: {props.account}</p>
     <div>
       <p>hello {props.account}</p>
-      <p>铸造NFT</p>
-      <p>上传图片</p>
     </div>
   </Card>
 );

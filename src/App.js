@@ -38,6 +38,8 @@ class App extends Component {
       account: null,
       imgSrc: null,
 
+      isShowMintNFT: false,
+
       isShowMyNFT: false,
       showMyNFT_num: 0,
       showMyNFT_IDs: null,
@@ -144,6 +146,7 @@ class App extends Component {
 
   resetAll = () => {
     this.setState({
+      isShowMintNFT: false,
       isShowMyNFT: false,
       isShowMyOngoingNFT: false,
       isShowNFTMarket: false,
@@ -151,22 +154,13 @@ class App extends Component {
   };
 
   mintNFT = async () => {
-    console.log(this.state.account);
-    console.log(this.state.imgSrc);
     try {
-      console.log("debug");
       //TODO:没有启动私链的话会永久等待，应该报错，怎么解决
       let res = await auctionInstance.methods
         .awardItem(this.state.account, this.state.imgSrc)
         .send({ from: this.state.account, gas: "3000000" });
-      // window.location.reload();
       alert("mint success!");
       window.location.reload();
-      console.log("mint success! ID: " + res);
-      console.log(
-        "balance:" +
-          auctionInstance.methods.balanceOf(this.state.account).call()
-      );
     } catch (e) {
       console.log(e);
       alert("mint fail!");
@@ -178,10 +172,11 @@ class App extends Component {
     console.log(term);
     var price = document.getElementById("price").value;
     var time = document.getElementById("time").value;
-    console.log(price, time);
+    price = web3.utils.toWei(price, "ether");
+    console.log(price);
     try {
       let res = await auctionInstance.methods
-        .createAuction(term.ID, price, time)
+        .createAuction(term.NFT_ID, price, time)
         .send({ from: this.state.account, gas: "3000000" });
       alert("create auction success!");
       window.location.reload();
@@ -207,7 +202,7 @@ class App extends Component {
         {res.map((term) => (
           <div>
             <p>URI:{term.URI}</p>
-            <p>ID:{term.NFT_ID}</p>
+            <p>NFT_ID:{term.NFT_ID}</p>
             <img
               style={{ height: 180, width: 320 }}
               src={"http://localhost:8080/ipfs/" + term.URI}
@@ -216,12 +211,17 @@ class App extends Component {
               <form onSubmit={this.createAuction.bind(this, term)}>
                 <label>
                   拍卖起价:
-                  <input id="price" type="number" name="price" />
+                  <input
+                    id="price"
+                    type="number"
+                    step="0.000000000000000001"
+                    name="price"
+                  />
                 </label>
                 <br />
                 <label>
                   持续时间（秒）：
-                  <input id="time" type="number" name="time" />
+                  <input id="time" type="number" step="0.01" name="time" />
                 </label>
                 <input type="submit" value="拍卖" />
               </form>
@@ -267,6 +267,33 @@ class App extends Component {
     ) : null;
   };
 
+  bid_pre = async (bid_money, term) => {
+    try {
+      let res = await auctionInstance.methods.bid(term.auction_ID).send({
+        from: this.state.account,
+        value: web3.utils.toWei(String(bid_money), "ether"),
+        gas: "3000000",
+      });
+      console.log(res);
+      alert("bid success");
+      window.location.reload();
+      //TODO:这边setState后好像没用
+      this.setState({ isShowNFTMarket: true });
+    } catch (e) {
+      console.log(e);
+      alert("bid fail!");
+    }
+  };
+
+  bid = async (term, e) => {
+    e.preventDefault();
+    console.log("bid");
+    //BUG:bid is async, sometimes bid_money is empty and bid_pre is executed!
+    let bid_money = document.getElementById("price").value;
+    console.log(bid_money);
+    await this.bid_pre(bid_money, term);
+  };
+
   showNFTMarket = () => {
     let res = [];
 
@@ -285,17 +312,34 @@ class App extends Component {
       <div>
         {res.map((term) => (
           <div>
-            <p>URI:{term.URI}</p>
-            <p>auction_ID:{term.auction_ID}</p>
-            <p>
-              起价: {term.start_price} 最高价: {term.highest_price}
-            </p>
-            <p>结束时间: {term.end_time}</p>
-            <p>{term.is_ended ? "已结束" : "未结束"}</p>
-            <img
-              style={{ height: 180, width: 320 }}
-              src={"http://localhost:8080/ipfs/" + term.URI}
-            />
+            <br />
+            {!term.is_ended ? (
+              <div>
+                <p>URI:{term.URI}</p>
+                <p>auction_ID:{term.auction_ID}</p>
+                <p>
+                  起价: {term.start_price} 最高价: {term.highest_price}
+                </p>
+                <p>结束时间: {term.end_time}</p>
+                <p>{term.is_ended ? "已结束" : "未结束"}</p>
+                <img
+                  style={{ height: 180, width: 320 }}
+                  src={"http://localhost:8080/ipfs/" + term.URI}
+                />
+                <form onSubmit={this.bid.bind(this, term)}>
+                  <label>
+                    出价:
+                    <input
+                      id="price"
+                      type="number"
+                      step="0.000000000000000001"
+                      name="price"
+                    />
+                  </label>
+                  <input type="submit" value="确认参与" />
+                </form>
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -312,58 +356,22 @@ class App extends Component {
           mintNFT={this.mintNFT}
         />
         <div>
-          <label id="file">Choose file to upload</label>
-          <input
-            type="file"
-            ref="file"
-            id="file"
-            name="file"
-            multiple="multiple"
-          />
-        </div>
-        <div>
           <div>
-            <button
-              onClick={() => {
-                var file = this.refs.file.files[0];
-                var reader = new FileReader();
-                // reader.readAsDataURL(file);
-                reader.readAsArrayBuffer(file);
-                reader.onloadend = (e) => {
-                  console.log(reader);
-                  // 上传数据到IPFS
-                  saveImageOnIpfs(reader).then((hash) => {
-                    console.log(hash);
-                    this.setState({ imgSrc: hash });
-                  });
-                };
-              }}
-            >
-              Submit
-            </button>
-            <button onClick={this.mintNFT}>mint</button>
-            {this.state.imgSrc ? (
-              <div>
-                <h2>{"http://localhost:8080/ipfs/" + this.state.imgSrc}</h2>
-                <img
-                  alt="testIPFS"
-                  style={{
-                    height: 120,
-                    width: 160,
-                  }}
-                  src={"http://localhost:8080/ipfs/" + this.state.imgSrc}
-                />
-              </div>
-            ) : (
-              <p>hello IPFS, no image uploaded</p>
-            )}
             <div>
+              <button
+                onClick={() => {
+                  this.resetAll();
+                  console.log("click Mint NFT");
+                  this.setState({ isShowMintNFT: true });
+                }}
+              >
+                铸造NFT
+              </button>
               <button
                 onClick={() => {
                   this.resetAll();
                   console.log("click showMyNFT");
                   this.setState({ isShowMyNFT: true });
-                  console.log(this.state.isShowMyNFT);
                 }}
               >
                 我铸造的NFT
@@ -386,6 +394,59 @@ class App extends Component {
               >
                 NFT市场
               </button>
+            </div>
+            {/* 下面是铸造NFT界面的内容 */}
+            <div>
+              {this.state.isShowMintNFT ? (
+                <div>
+                  <div>
+                    <label id="file">Choose file to upload</label>
+                    <input
+                      type="file"
+                      ref="file"
+                      id="file"
+                      name="file"
+                      multiple="multiple"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      var file = this.refs.file.files[0];
+                      var reader = new FileReader();
+                      // reader.readAsDataURL(file);
+                      reader.readAsArrayBuffer(file);
+                      reader.onloadend = (e) => {
+                        console.log(reader);
+                        // 上传数据到IPFS
+                        saveImageOnIpfs(reader).then((hash) => {
+                          console.log(hash);
+                          this.setState({ imgSrc: hash });
+                        });
+                      };
+                    }}
+                  >
+                    Submit
+                  </button>
+                  <button onClick={this.mintNFT}>mint</button>
+                  {this.state.imgSrc ? (
+                    <div>
+                      <h2>
+                        {"http://localhost:8080/ipfs/" + this.state.imgSrc}
+                      </h2>
+                      <img
+                        alt="testIPFS"
+                        style={{
+                          height: 120,
+                          width: 160,
+                        }}
+                        src={"http://localhost:8080/ipfs/" + this.state.imgSrc}
+                      />
+                    </div>
+                  ) : (
+                    <p>hello IPFS, no image uploaded</p>
+                  )}
+                </div>
+              ) : null}
             </div>
             {/* 下面是我铸造的NFT的内容 */}
             <div>{this.state.isShowMyNFT ? this.showMyNFT() : null}</div>
