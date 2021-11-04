@@ -170,8 +170,9 @@ class App extends Component {
   createAuction = async (term, e) => {
     e.preventDefault();
     console.log(term);
-    var price = document.getElementById("price").value;
-    var time = document.getElementById("time").value;
+    let price = this.start_price.value;
+    let time = this.time.value;
+    console.log(price, time);
     price = web3.utils.toWei(price, "ether");
     console.log(price);
     try {
@@ -216,12 +217,23 @@ class App extends Component {
                     type="number"
                     step="0.000000000000000001"
                     name="price"
+                    ref={(input) => {
+                      this.start_price = input;
+                    }}
                   />
                 </label>
                 <br />
                 <label>
                   持续时间（秒）：
-                  <input id="time" type="number" step="0.01" name="time" />
+                  <input
+                    id="time"
+                    type="number"
+                    step="0.01"
+                    name="time"
+                    ref={(input) => {
+                      this.time = input;
+                    }}
+                  />
                 </label>
                 <input type="submit" value="拍卖" />
               </form>
@@ -267,7 +279,13 @@ class App extends Component {
     ) : null;
   };
 
-  bid_pre = async (bid_money, term) => {
+  bid = async (term, e) => {
+    e.preventDefault();
+    console.log("bid");
+    //fixBUG:bid is async, sometimes bid_money is empty and bid_pre is executed!
+    //add ref in input label
+    let bid_money = this.bid_money.value;
+    console.log(bid_money);
     try {
       let res = await auctionInstance.methods.bid(term.auction_ID).send({
         from: this.state.account,
@@ -285,18 +303,8 @@ class App extends Component {
     }
   };
 
-  bid = async (term, e) => {
-    e.preventDefault();
-    console.log("bid");
-    //BUG:bid is async, sometimes bid_money is empty and bid_pre is executed!
-    let bid_money = document.getElementById("price").value;
-    console.log(bid_money);
-    await this.bid_pre(bid_money, term);
-  };
-
   showNFTMarket = () => {
     let res = [];
-
     for (let i = 0; i < this.state.showMarketNFT_num; i++) {
       res.push({
         URI: this.state.showMarketNFT_URIs[i],
@@ -334,6 +342,9 @@ class App extends Component {
                       type="number"
                       step="0.000000000000000001"
                       name="price"
+                      ref={(input) => {
+                        this.bid_money = input;
+                      }}
                     />
                   </label>
                   <input type="submit" value="确认参与" />
