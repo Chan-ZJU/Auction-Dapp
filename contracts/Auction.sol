@@ -8,13 +8,19 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract Auction is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
-    mapping(string => uint256) hashes;
+    mapping(string => uint256) public hashes;
 
     //NFTOwners[address] stores the NFT IDs he owns
     mapping(address => uint256[]) public NFTOwners;
+    //NFTID => history owners[]
     mapping(uint256 => address[]) public NFTHistory;
 
     constructor() ERC721("AuctionItem", "AITM") {}
+
+    function OwnerOF(uint256 NFTID) public view returns (address) {
+        uint256 last = NFTHistory[NFTID].length - 1;
+        return NFTHistory[NFTID][last];
+    }
 
     function awardItem(address recipient, string memory tokenURI)
         public
@@ -94,7 +100,7 @@ contract Auction is ERC721URIStorage {
     }
 
     //every auction has its own ID, so every auction has an array recording all the bids
-    mapping(uint256 => Bid[]) auction_bids;
+    mapping(uint256 => Bid[]) public auction_bids;
 
     //create a new Auction
     function createAuction(
@@ -102,7 +108,7 @@ contract Auction is ERC721URIStorage {
         uint256 begin_price,
         uint256 finish_time
     ) public {
-        require(msg.sender == ownerOf(nftID), "You are not user of the NFT!");
+        require(msg.sender == OwnerOF(nftID), "You are not user of the NFT!");
         Auction_struct memory newAuction;
         newAuction.NFTid = nftID;
         NFT_MapTo_AuctionID[nftID] = auction_array.length;
@@ -230,6 +236,7 @@ contract Auction is ERC721URIStorage {
             "Auction ended"
         );
         uint256 last = auction_bids[auctionID].length;
+        require(msg.value > auction_array[auctionID].start_price);
         if (last > 0) {
             require(
                 msg.value > auction_bids[auctionID][last - 1].value,
@@ -245,6 +252,18 @@ contract Auction is ERC721URIStorage {
         auction_array[auctionID].highest_price = msg.value;
     }
 
+    function removeOwnedNFT(address user, uint256 NFTID) public {
+        for (uint256 i = 0; i < NFTOwners[user].length; i++) {
+            if (NFTOwners[user][i] == NFTID) {
+                NFTOwners[user][i] = NFTOwners[user][
+                    NFTOwners[user].length - 1
+                ];
+                NFTOwners[user].pop();
+                return;
+            }
+        }
+    }
+
     //the highest bidder need to endAuction to claim the NFT, and refund the lower price bidder and the beneficiary
     function endAuction(uint256 auctionID) public {
         require(
@@ -252,8 +271,38 @@ contract Auction is ERC721URIStorage {
             "Auction not yet ended"
         );
         require(!auction_array[auctionID].is_ended, "NFT has been claimed");
+        uint256 last = auction_bids[auctionID].length;
+        //no one bid on the auction, the auction creater need to end the auction
+        if (last == 0) {
+            require(
+                msg.sender == auction_array[auctionID].beneficiary,
+                "You are not owner of the auction"
+            );
+        } else {
+            require(
+                auction_bids[auctionID][last - 1].from == msg.sender,
+                "You are not the highest_price"
+            );
+        }
         auction_array[auctionID].is_ended = true;
+        //TODO:refund all the lower bids and give money to the auction creater
+        if (last > 1) {
+            for (uint256 i = 0; i < last - 1; i++) {
+                payable(auction_bids[auctionID][i].from).transfer(
+                    auction_bids[auctionID][i].value
+                );
+            }
+        }
+        if (last > 0) {
+            auction_array[auctionID].beneficiary.transfer(
+                auction_bids[auctionID][last - 1].value
+            );
+        }
         //TODO:transfer the ownership of NFT
+        uint256 NFTID = auction_array[auctionID].NFTid;
+        removeOwnedNFT(OwnerOF(NFTID), NFTID);
+        NFTOwners[msg.sender].push(NFTID);
+        NFTHistory[NFTID].push(msg.sender);
     }
 
     //get the auction number

@@ -150,6 +150,25 @@ let abi = [
   {
     inputs: [
       {
+        internalType: "uint256",
+        name: "NFTID",
+        type: "uint256",
+      },
+    ],
+    name: "OwnerOF",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "address",
         name: "to",
         type: "address",
@@ -204,6 +223,35 @@ let abi = [
         internalType: "bool",
         name: "is_ended",
         type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "auction_bids",
+    outputs: [
+      {
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -442,6 +490,25 @@ let abi = [
   {
     inputs: [
       {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    name: "hashes",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "address",
         name: "owner",
         type: "address",
@@ -512,6 +579,24 @@ let abi = [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "NFTID",
+        type: "uint256",
+      },
+    ],
+    name: "removeOwnedNFT",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -815,6 +900,6 @@ let abi = [
     type: "function",
   },
 ];
-let address = "0xeF5304B63398268A7c743d8635f7b6b479ad2b12";
+let address = "0x565A650c79D002dEb1CB7A45692ea0e3F6562e50";
 let contractAuctionInstance = new web3.eth.Contract(abi, address);
 module.exports = contractAuctionInstance;

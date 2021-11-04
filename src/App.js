@@ -303,6 +303,19 @@ class App extends Component {
     }
   };
 
+  endAuction = async (term) => {
+    try {
+      let res = await auctionInstance.methods
+        .endAuction(term.auction_ID)
+        .send({ from: this.state.account, gas: "3000000" });
+      alert("claim NFT success");
+      window.location.reload();
+    } catch (e) {
+      console.log(e);
+      alert("claim NFT fail!");
+    }
+  };
+
   showNFTMarket = () => {
     let res = [];
     for (let i = 0; i < this.state.showMarketNFT_num; i++) {
@@ -349,6 +362,9 @@ class App extends Component {
                   </label>
                   <input type="submit" value="确认参与" />
                 </form>
+                <button onClick={this.endAuction.bind(this, term)}>
+                  认领NFT
+                </button>
               </div>
             ) : null}
           </div>
@@ -356,6 +372,8 @@ class App extends Component {
       </div>
     ) : null;
   };
+
+  showBoughtNFT = () => {};
 
   render() {
     return (
