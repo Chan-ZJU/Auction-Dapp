@@ -63,6 +63,8 @@ class App extends Component {
       showMarketNFT_end_times: null,
       showMarketNFT_is_endeds: null,
       showMarketNFT_auctionIDs: null,
+
+      NFTHistory: null,
     };
   }
 
@@ -118,6 +120,15 @@ class App extends Component {
     let showMarketNFTisendeds = isShowMarketNFTRes2[1];
     let showMarketNFTauctionIDs = isShowMarketNFTRes2[2];
 
+    let NFTHistory = [];
+    let res;
+    for (let i = 0; i < showMarketNFTauctionIDs.length; i++) {
+      res = await auctionInstance.methods
+        .traceNFTHistory(showMarketNFTauctionIDs[i])
+        .call();
+      NFTHistory.push(res);
+    }
+
     this.setState({
       account: accounts[0],
 
@@ -141,6 +152,8 @@ class App extends Component {
       showMarketNFT_highest_prices: showMarketNFThighest_prices,
       showMarketNFT_is_endeds: showMarketNFTisendeds,
       showMarketNFT_start_prices: showMarketNFTstart_prices,
+
+      NFTHistory: NFTHistory,
     });
   }
 
@@ -169,12 +182,10 @@ class App extends Component {
 
   createAuction = async (term, e) => {
     e.preventDefault();
-    console.log(term);
     let price = this.start_price.value;
     let time = this.time.value;
     console.log(price, time);
     price = web3.utils.toWei(price, "ether");
-    console.log(price);
     try {
       let res = await auctionInstance.methods
         .createAuction(term.NFT_ID, price, time)
@@ -281,7 +292,6 @@ class App extends Component {
 
   bid = async (term, e) => {
     e.preventDefault();
-    console.log("bid");
     //fixBUG:bid is async, sometimes bid_money is empty and bid_pre is executed!
     //add ref in input label
     let bid_money = this.bid_money.value;
@@ -326,6 +336,7 @@ class App extends Component {
         is_ended: this.state.showMarketNFT_is_endeds[i],
         end_time: this.state.showMarketNFT_end_times[i],
         auction_ID: this.state.showMarketNFT_auctionIDs[i],
+        History: this.state.NFTHistory[this.state.showMarketNFT_auctionIDs[i]],
       });
     }
     console.log(res);
@@ -343,6 +354,9 @@ class App extends Component {
                 </p>
                 <p>结束时间: {term.end_time}</p>
                 <p>{term.is_ended ? "已结束" : "未结束"}</p>
+                {term.History.map((history) => (
+                  <p>{history}</p>
+                ))}
                 <img
                   style={{ height: 180, width: 320 }}
                   src={"http://localhost:8080/ipfs/" + term.URI}

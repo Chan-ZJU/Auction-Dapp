@@ -775,6 +775,25 @@ let abi = [
   {
     inputs: [
       {
+        internalType: "uint256",
+        name: "auctionID",
+        type: "uint256",
+      },
+    ],
+    name: "traceNFTHistory",
+    outputs: [
+      {
+        internalType: "address[]",
+        name: "",
+        type: "address[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "address",
         name: "from",
         type: "address",
@@ -900,6 +919,6 @@ let abi = [
     type: "function",
   },
 ];
-let address = "0x565A650c79D002dEb1CB7A45692ea0e3F6562e50";
+let address = "0x444d9f4eECF9A017612A327ddEd550D1fb819c27";
 let contractAuctionInstance = new web3.eth.Contract(abi, address);
 module.exports = contractAuctionInstance;

@@ -300,9 +300,18 @@ contract Auction is ERC721URIStorage {
         }
         //TODO:transfer the ownership of NFT
         uint256 NFTID = auction_array[auctionID].NFTid;
+        isNFTAuctioned[NFTID] = false;
         removeOwnedNFT(OwnerOF(NFTID), NFTID);
         NFTOwners[msg.sender].push(NFTID);
         NFTHistory[NFTID].push(msg.sender);
+    }
+
+    function traceNFTHistory(uint256 auctionID)
+        public
+        view
+        returns (address[] memory)
+    {
+        return NFTHistory[auction_array[auctionID].NFTid];
     }
 
     //get the auction number
