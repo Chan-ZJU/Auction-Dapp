@@ -93,6 +93,9 @@ contract Auction is ERC721URIStorage {
     mapping(uint256 => bool) public isNFTAuctioned;
     mapping(uint256 => uint256) public NFT_MapTo_AuctionID;
 
+    //bought NFT from others, store the NFTIDs that he buys
+    mapping(address => uint256[]) NFTBuyers;
+
     //every bid has a from address and a value
     struct Bid {
         address from;
@@ -304,6 +307,7 @@ contract Auction is ERC721URIStorage {
         removeOwnedNFT(OwnerOF(NFTID), NFTID);
         NFTOwners[msg.sender].push(NFTID);
         NFTHistory[NFTID].push(msg.sender);
+        NFTBuyers[msg.sender].push(NFTID);
     }
 
     function traceNFTHistory(uint256 auctionID)
@@ -314,41 +318,20 @@ contract Auction is ERC721URIStorage {
         return NFTHistory[auction_array[auctionID].NFTid];
     }
 
-    //get the auction number
-    function getAuctionCount() public view returns (uint256) {
-        return auction_array.length;
-    }
-
-    //get the number of bids on an particular auction
-    function getBidCount(uint256 auctionID) public view returns (uint256) {
-        return auction_bids[auctionID].length;
-    }
-
-    //get the auctions of a user
-    function getMyAuction(address user) public view returns (uint256[] memory) {
-        return auction_owners[user];
-    }
-
-    //get Auction info by auctionID
-    function getAuctionInfo(uint256 auctionID)
+    function showBoughtNFT(address user)
         public
         view
-        returns (
-            uint256 NFTID,
-            address payable beneficiary,
-            uint256 start_price,
-            uint256 highest_price,
-            uint256 end_time,
-            bool is_ended
-        )
+        returns (uint256[] memory, string[] memory)
     {
-        return (
-            auction_array[auctionID].NFTid,
-            auction_array[auctionID].beneficiary,
-            auction_array[auctionID].start_price,
-            auction_array[auctionID].highest_price,
-            auction_array[auctionID].end_time,
-            auction_array[auctionID].is_ended
-        );
+        uint256 last = NFTBuyers[user].length;
+        uint256[] memory Price = new uint256[](last);
+        string[] memory URI = new string[](last);
+        uint256 auctionID;
+        for (uint256 i = 0; i < last; i++) {
+            auctionID = NFT_MapTo_AuctionID[NFTBuyers[user][i]];
+            Price[i] = auction_array[auctionID].highest_price;
+            URI[i] = tokenURI(NFTBuyers[user][i]);
+        }
+        return (Price, URI);
     }
 }

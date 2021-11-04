@@ -393,101 +393,6 @@ let abi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "getAuctionCount",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "auctionID",
-        type: "uint256",
-      },
-    ],
-    name: "getAuctionInfo",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "NFTID",
-        type: "uint256",
-      },
-      {
-        internalType: "address payable",
-        name: "beneficiary",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "start_price",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "highest_price",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "end_time",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "is_ended",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "auctionID",
-        type: "uint256",
-      },
-    ],
-    name: "getBidCount",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-    ],
-    name: "getMyAuction",
-    outputs: [
-      {
-        internalType: "uint256[]",
-        name: "",
-        type: "uint256[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "string",
@@ -666,6 +571,30 @@ let abi = [
     name: "setApprovalForAll",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
+    ],
+    name: "showBoughtNFT",
+    outputs: [
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+      {
+        internalType: "string[]",
+        name: "",
+        type: "string[]",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -919,6 +848,6 @@ let abi = [
     type: "function",
   },
 ];
-let address = "0x444d9f4eECF9A017612A327ddEd550D1fb819c27";
+let address = "0xa6ED4376ED05dB4EeBD924B7e658A52F0F331D1E";
 let contractAuctionInstance = new web3.eth.Contract(abi, address);
 module.exports = contractAuctionInstance;

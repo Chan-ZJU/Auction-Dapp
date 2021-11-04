@@ -64,7 +64,13 @@ class App extends Component {
       showMarketNFT_is_endeds: null,
       showMarketNFT_auctionIDs: null,
 
+      isShowHistory: false,
       NFTHistory: null,
+      history: null,
+
+      isShowBuyNFT: false,
+      showBuyNFT_price: null,
+      showBuyNFT_URI: null,
     };
   }
 
@@ -129,6 +135,12 @@ class App extends Component {
       NFTHistory.push(res);
     }
 
+    let resBuy = await auctionInstance.methods
+      .showBoughtNFT(accounts[0])
+      .call();
+    let showBuyNFT_price = resBuy[0];
+    let showBuyNFT_URI = resBuy[1];
+
     this.setState({
       account: accounts[0],
 
@@ -154,6 +166,9 @@ class App extends Component {
       showMarketNFT_start_prices: showMarketNFTstart_prices,
 
       NFTHistory: NFTHistory,
+
+      showBuyNFT_URI: showBuyNFT_URI,
+      showBuyNFT_price: showBuyNFT_price,
     });
   }
 
@@ -163,6 +178,8 @@ class App extends Component {
       isShowMyNFT: false,
       isShowMyOngoingNFT: false,
       isShowNFTMarket: false,
+      isShowHistory: false,
+      isShowBuyNFT: false,
     });
   };
 
@@ -326,6 +343,11 @@ class App extends Component {
     }
   };
 
+  showHistory = (term) => {
+    this.resetAll();
+    this.setState({ isShowHistory: true, history: term.History });
+  };
+
   showNFTMarket = () => {
     let res = [];
     for (let i = 0; i < this.state.showMarketNFT_num; i++) {
@@ -344,9 +366,9 @@ class App extends Component {
       <div>
         {res.map((term) => (
           <div>
-            <br />
             {!term.is_ended ? (
               <div>
+                <br />
                 <p>URI:{term.URI}</p>
                 <p>auction_ID:{term.auction_ID}</p>
                 <p>
@@ -354,9 +376,9 @@ class App extends Component {
                 </p>
                 <p>结束时间: {term.end_time}</p>
                 <p>{term.is_ended ? "已结束" : "未结束"}</p>
-                {term.History.map((history) => (
-                  <p>{history}</p>
-                ))}
+                <button onClick={this.showHistory.bind(this, term)}>
+                  流转信息
+                </button>
                 <img
                   style={{ height: 180, width: 320 }}
                   src={"http://localhost:8080/ipfs/" + term.URI}
@@ -387,7 +409,30 @@ class App extends Component {
     ) : null;
   };
 
-  showBoughtNFT = () => {};
+  showBoughtNFT = () => {
+    let res = [];
+    for (let i = 0; i < this.state.showBuyNFT_URI.length; i++) {
+      res.push({
+        price: this.state.showBuyNFT_price[i],
+        URI: this.state.showBuyNFT_URI[i],
+      });
+    }
+    console.log(res);
+    return (
+      <div>
+        {res.map((term) => (
+          <div>
+            <br />
+            <p>买入价格: {term.price}</p>
+            <img
+              style={{ height: 180, width: 320 }}
+              src={"http://localhost:8080/ipfs/" + term.URI}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   render() {
     return (
@@ -417,7 +462,7 @@ class App extends Component {
                   this.setState({ isShowMyNFT: true });
                 }}
               >
-                我铸造的NFT
+                我拥有的NFT
               </button>
               <button
                 onClick={() => {
@@ -436,6 +481,15 @@ class App extends Component {
                 }}
               >
                 NFT市场
+              </button>
+              <button
+                onClick={() => {
+                  this.resetAll();
+                  console.log("click bought NFT");
+                  this.setState({ isShowBuyNFT: true });
+                }}
+              >
+                我买入的NFT
               </button>
             </div>
             {/* 下面是铸造NFT界面的内容 */}
@@ -501,6 +555,14 @@ class App extends Component {
             <div>
               {this.state.isShowNFTMarket ? this.showNFTMarket() : null}
             </div>
+            {/* 下面是NFT流转信息的内容 */}
+            <div>
+              {this.state.isShowHistory
+                ? this.state.history.map((history) => <p>{history}</p>)
+                : null}
+            </div>
+            {/* 下面是买入NFT的内容 */}
+            <div>{this.state.isShowBuyNFT ? this.showBoughtNFT() : null}</div>
           </div>
         </div>
       </div>
