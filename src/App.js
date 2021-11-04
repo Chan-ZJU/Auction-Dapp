@@ -1,7 +1,6 @@
 import React, { Component, useReducer } from "react";
 import Home from "./ui/ui";
 import "./App.css";
-import { create } from "ipfs-http-client";
 const ipfsAPI = require("ipfs-api");
 const ipfs = ipfsAPI({ host: "localhost", port: "5001", protocol: "http" });
 
@@ -38,6 +37,9 @@ class App extends Component {
       account: null,
       imgSrc: null,
 
+      price: null,
+      time: null,
+
       isShowMintNFT: false,
 
       isShowMyNFT: false,
@@ -72,6 +74,17 @@ class App extends Component {
       showBuyNFT_price: null,
       showBuyNFT_URI: null,
     };
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(event) {
+    let target = event.target;
+    if (target.id == "price") {
+      this.setState({ price: target.value });
+    }
+    if (target.id == "time") {
+      this.setState({ time: target.value });
+    }
   }
 
   componentDidMount() {}
@@ -80,15 +93,22 @@ class App extends Component {
     this.loadBlockchainData();
   }
 
+  accountInterval = setInterval(async () => {
+    let accounts = await web3.eth.getAccounts();
+    if (accounts[0] != this.state.account && typeof accounts[0] != undefined) {
+      // window.location.reload();
+      await this.loadBlockchainData();
+      console.log(accounts[0]);
+    }
+  }, 300);
+
   //TODO:切换账户不会刷新，如果切换后直接mint，会提示需要账户信息
   async loadBlockchainData() {
-    console.log("load blockchain data");
     let accounts = await web3.eth.getAccounts();
 
     let showMyNFTRes = await auctionInstance.methods
       .showMyNFT(accounts[0])
       .call();
-    console.log(showMyNFTRes);
     let showMyNFTIds = showMyNFTRes[1];
     let showMyNFTURIs = showMyNFTRes[2];
     let showMyNFTnum = parseInt(showMyNFTRes[0]);
@@ -97,11 +117,9 @@ class App extends Component {
     let isShowMyOngoingNFTRes1 = await auctionInstance.methods
       .viewMyAllAuction_URI_price(accounts[0])
       .call();
-    console.log(isShowMyOngoingNFTRes1);
     let isShowMyOngoingNFTRes2 = await auctionInstance.methods
       .viewMyAllAuction_time_isended_auctionID(accounts[0])
       .call();
-    console.log(isShowMyOngoingNFTRes2);
     let showMyOngingNFTURIs = isShowMyOngoingNFTRes1[0];
     let showMyOngingNFTnums = showMyOngingNFTURIs.length;
     let showMyOngingNFTstart_prices = isShowMyOngoingNFTRes1[1];
@@ -113,11 +131,9 @@ class App extends Component {
     let isShowMarketNFTRes1 = await auctionInstance.methods
       .viewAllAuction_URI_price()
       .call();
-    console.log(isShowMarketNFTRes1);
     let isShowMarketNFTRes2 = await auctionInstance.methods
       .viewAllAuction_time_isended_auctionID()
       .call();
-    console.log(isShowMarketNFTRes2);
     let showMarketNFTURIs = isShowMarketNFTRes1[0];
     let showMarketNFTnums = showMarketNFTURIs.length;
     let showMarketNFTstart_prices = isShowMarketNFTRes1[1];
@@ -190,7 +206,9 @@ class App extends Component {
         .awardItem(this.state.account, this.state.imgSrc)
         .send({ from: this.state.account, gas: "3000000" });
       alert("mint success!");
-      window.location.reload();
+      this.resetAll();
+      await this.loadBlockchainData();
+      this.setState({ isShowMintNFT: true });
     } catch (e) {
       console.log(e);
       alert("mint fail!");
@@ -199,8 +217,8 @@ class App extends Component {
 
   createAuction = async (term, e) => {
     e.preventDefault();
-    let price = this.start_price.value;
-    let time = this.time.value;
+    let price = this.state.price;
+    let time = this.state.time;
     console.log(price, time);
     price = web3.utils.toWei(price, "ether");
     try {
@@ -208,7 +226,9 @@ class App extends Component {
         .createAuction(term.NFT_ID, price, time)
         .send({ from: this.state.account, gas: "3000000" });
       alert("create auction success!");
-      window.location.reload();
+      this.resetAll();
+      await this.loadBlockchainData();
+      this.setState({ isShowMyNFT: true });
     } catch (e) {
       console.log(e);
       alert("create auction fail!");
@@ -239,12 +259,13 @@ class App extends Component {
             {!term.isAuctioned ? (
               <form onSubmit={this.createAuction.bind(this, term)}>
                 <label>
-                  拍卖起价:
+                  拍卖起价（ether）:
                   <input
                     id="price"
                     type="number"
                     step="0.000000000000000001"
                     name="price"
+                    onChange={this.handleChange}
                     ref={(input) => {
                       this.start_price = input;
                     }}
@@ -258,6 +279,7 @@ class App extends Component {
                     type="number"
                     step="0.01"
                     name="time"
+                    onChange={this.handleChange}
                     ref={(input) => {
                       this.time = input;
                     }}
@@ -293,9 +315,11 @@ class App extends Component {
             <p>URI:{term.URI}</p>
             <p>auction_ID:{term.auction_ID}</p>
             <p>
-              起价: {term.start_price} 最高价: {term.highest_price}
+              起价: {web3.utils.fromWei(term.start_price, "ether")} ether
+              <br />
+              最高价: {web3.utils.fromWei(term.highest_price, "ether")} ether
             </p>
-            <p>结束时间: {term.end_time}</p>
+            <p>结束时间: {new Date(term.end_time * 1000).toString()}</p>
             <p>{term.is_ended ? "已结束" : "未结束"}</p>
             <img
               style={{ height: 180, width: 320 }}
@@ -311,7 +335,7 @@ class App extends Component {
     e.preventDefault();
     //fixBUG:bid is async, sometimes bid_money is empty and bid_pre is executed!
     //add ref in input label
-    let bid_money = this.bid_money.value;
+    let bid_money = this.state.price;
     console.log(bid_money);
     try {
       let res = await auctionInstance.methods.bid(term.auction_ID).send({
@@ -321,8 +345,8 @@ class App extends Component {
       });
       console.log(res);
       alert("bid success");
-      window.location.reload();
-      //TODO:这边setState后好像没用
+      this.resetAll();
+      await this.loadBlockchainData();
       this.setState({ isShowNFTMarket: true });
     } catch (e) {
       console.log(e);
@@ -336,7 +360,9 @@ class App extends Component {
         .endAuction(term.auction_ID)
         .send({ from: this.state.account, gas: "3000000" });
       alert("claim NFT success");
-      window.location.reload();
+      this.resetAll();
+      await this.loadBlockchainData();
+      this.setState({ isShowBuyNFT: true });
     } catch (e) {
       console.log(e);
       alert("claim NFT fail!");
@@ -372,9 +398,12 @@ class App extends Component {
                 <p>URI:{term.URI}</p>
                 <p>auction_ID:{term.auction_ID}</p>
                 <p>
-                  起价: {term.start_price} 最高价: {term.highest_price}
+                  起价: {web3.utils.fromWei(term.start_price, "ether")} ether{" "}
+                  <br />
+                  最高价: {web3.utils.fromWei(term.highest_price, "ether")}{" "}
+                  ether
                 </p>
-                <p>结束时间: {term.end_time}</p>
+                <p>结束时间: {new Date(term.end_time * 1000).toString()}</p>
                 <p>{term.is_ended ? "已结束" : "未结束"}</p>
                 <button onClick={this.showHistory.bind(this, term)}>
                   流转信息
@@ -391,6 +420,7 @@ class App extends Component {
                       type="number"
                       step="0.000000000000000001"
                       name="price"
+                      onChange={this.handleChange}
                       ref={(input) => {
                         this.bid_money = input;
                       }}
@@ -423,7 +453,7 @@ class App extends Component {
         {res.map((term) => (
           <div>
             <br />
-            <p>买入价格: {term.price}</p>
+            <p>买入价格: {web3.utils.fromWei(term.price, "ether")} ether</p>
             <img
               style={{ height: 180, width: 320 }}
               src={"http://localhost:8080/ipfs/" + term.URI}
@@ -540,7 +570,7 @@ class App extends Component {
                       />
                     </div>
                   ) : (
-                    <p>hello IPFS, no image uploaded</p>
+                    <p>please upload your NFT image</p>
                   )}
                 </div>
               ) : null}
