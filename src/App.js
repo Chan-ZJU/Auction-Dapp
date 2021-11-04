@@ -1,6 +1,17 @@
-import React, { Component, useReducer } from "react";
+import React, { Component } from "react";
 import Home from "./ui/ui";
 import "./App.css";
+import { Button, Menu, Divider, BackTop } from "antd";
+import "antd/dist/antd.css";
+import {
+  HomeOutlined,
+  SettingFilled,
+  ShopOutlined,
+  SendOutlined,
+  StarOutlined,
+  UploadOutlined,
+  SketchOutlined,
+} from "@ant-design/icons";
 const ipfsAPI = require("ipfs-api");
 const ipfs = ipfsAPI({ host: "localhost", port: "5001", protocol: "http" });
 
@@ -79,10 +90,10 @@ class App extends Component {
 
   handleChange(event) {
     let target = event.target;
-    if (target.id == "price") {
+    if (target.id === "price") {
       this.setState({ price: target.value });
     }
-    if (target.id == "time") {
+    if (target.id === "time") {
       this.setState({ time: target.value });
     }
   }
@@ -95,10 +106,10 @@ class App extends Component {
 
   accountInterval = setInterval(async () => {
     let accounts = await web3.eth.getAccounts();
-    if (accounts[0] != this.state.account && typeof accounts[0] != undefined) {
+    if (accounts[0] !== this.state.account && typeof accounts[0] != undefined) {
       // window.location.reload();
+      this.resetAll();
       await this.loadBlockchainData();
-      console.log(accounts[0]);
     }
   }, 300);
 
@@ -202,7 +213,7 @@ class App extends Component {
   mintNFT = async () => {
     try {
       //TODO:没有启动私链的话会永久等待，应该报错，怎么解决
-      let res = await auctionInstance.methods
+      await auctionInstance.methods
         .awardItem(this.state.account, this.state.imgSrc)
         .send({ from: this.state.account, gas: "3000000" });
       alert("mint success!");
@@ -222,7 +233,7 @@ class App extends Component {
     console.log(price, time);
     price = web3.utils.toWei(price, "ether");
     try {
-      let res = await auctionInstance.methods
+      await auctionInstance.methods
         .createAuction(term.NFT_ID, price, time)
         .send({ from: this.state.account, gas: "3000000" });
       alert("create auction success!");
@@ -250,10 +261,9 @@ class App extends Component {
       <div>
         {res.map((term) => (
           <div>
-            <p>URI:{term.URI}</p>
-            <p>NFT_ID:{term.NFT_ID}</p>
             <img
               style={{ height: 180, width: 320 }}
+              alt="NFT"
               src={"http://localhost:8080/ipfs/" + term.URI}
             />
             {!term.isAuctioned ? (
@@ -288,6 +298,7 @@ class App extends Component {
                 <input type="submit" value="拍卖" />
               </form>
             ) : null}
+            <Divider />
           </div>
         ))}
       </div>
@@ -312,8 +323,6 @@ class App extends Component {
       <div>
         {res.map((term) => (
           <div>
-            <p>URI:{term.URI}</p>
-            <p>auction_ID:{term.auction_ID}</p>
             <p>
               起价: {web3.utils.fromWei(term.start_price, "ether")} ether
               <br />
@@ -323,8 +332,10 @@ class App extends Component {
             <p>{term.is_ended ? "已结束" : "未结束"}</p>
             <img
               style={{ height: 180, width: 320 }}
+              alt="NFT"
               src={"http://localhost:8080/ipfs/" + term.URI}
             />
+            <Divider />
           </div>
         ))}
       </div>
@@ -356,13 +367,13 @@ class App extends Component {
 
   endAuction = async (term) => {
     try {
-      let res = await auctionInstance.methods
+      await auctionInstance.methods
         .endAuction(term.auction_ID)
         .send({ from: this.state.account, gas: "3000000" });
       alert("claim NFT success");
       this.resetAll();
       await this.loadBlockchainData();
-      this.setState({ isShowBuyNFT: true });
+      this.setState({ isShowNFTMarket: true });
     } catch (e) {
       console.log(e);
       alert("claim NFT fail!");
@@ -394,9 +405,6 @@ class App extends Component {
           <div>
             {!term.is_ended ? (
               <div>
-                <br />
-                <p>URI:{term.URI}</p>
-                <p>auction_ID:{term.auction_ID}</p>
                 <p>
                   起价: {web3.utils.fromWei(term.start_price, "ether")} ether{" "}
                   <br />
@@ -405,11 +413,12 @@ class App extends Component {
                 </p>
                 <p>结束时间: {new Date(term.end_time * 1000).toString()}</p>
                 <p>{term.is_ended ? "已结束" : "未结束"}</p>
-                <button onClick={this.showHistory.bind(this, term)}>
+                <Button onClick={this.showHistory.bind(this, term)}>
                   流转信息
-                </button>
+                </Button>
                 <img
                   style={{ height: 180, width: 320 }}
+                  alt="NFT"
                   src={"http://localhost:8080/ipfs/" + term.URI}
                 />
                 <form onSubmit={this.bid.bind(this, term)}>
@@ -428,9 +437,10 @@ class App extends Component {
                   </label>
                   <input type="submit" value="确认参与" />
                 </form>
-                <button onClick={this.endAuction.bind(this, term)}>
+                <Button onClick={this.endAuction.bind(this, term)}>
                   认领NFT
-                </button>
+                </Button>
+                <Divider />
               </div>
             ) : null}
           </div>
@@ -452,12 +462,13 @@ class App extends Component {
       <div>
         {res.map((term) => (
           <div>
-            <br />
             <p>买入价格: {web3.utils.fromWei(term.price, "ether")} ether</p>
             <img
               style={{ height: 180, width: 320 }}
+              alt="NFT"
               src={"http://localhost:8080/ipfs/" + term.URI}
             />
+            <Divider />
           </div>
         ))}
       </div>
@@ -466,68 +477,91 @@ class App extends Component {
 
   render() {
     return (
-      <div>
-        <Home
-          account={this.state.account}
-          imgSrc={this.state.imgSrc}
-          uploadImage={this.uploadImage}
-          mintNFT={this.mintNFT}
-        />
+      <div class="topMenu">
+        <Home account={this.state.account} />
         <div>
-          <div>
-            <div>
-              <button
-                onClick={() => {
-                  this.resetAll();
-                  console.log("click Mint NFT");
-                  this.setState({ isShowMintNFT: true });
-                }}
-              >
-                铸造NFT
-              </button>
-              <button
-                onClick={() => {
-                  this.resetAll();
-                  console.log("click showMyNFT");
-                  this.setState({ isShowMyNFT: true });
-                }}
-              >
-                我拥有的NFT
-              </button>
-              <button
-                onClick={() => {
-                  this.resetAll();
-                  console.log("click showMyOngingNFT");
-                  this.setState({ isShowMyOngoingNFT: true });
-                }}
-              >
-                我的NFT拍卖详情
-              </button>
-              <button
-                onClick={() => {
-                  this.resetAll();
-                  console.log("click show NFT market");
-                  this.setState({ isShowNFTMarket: true });
-                }}
-              >
-                NFT市场
-              </button>
-              <button
-                onClick={() => {
-                  this.resetAll();
-                  console.log("click bought NFT");
-                  this.setState({ isShowBuyNFT: true });
-                }}
-              >
-                我买入的NFT
-              </button>
-            </div>
+          <div align="center">
+            <Menu theme="light" mode="horizontal" style={{ width: 900 }}>
+              <Menu.Item>
+                <Button
+                  icon={<HomeOutlined />}
+                  value="large"
+                  type="primary"
+                  onClick={() => {
+                    this.resetAll();
+                    console.log("click Mint NFT");
+                    this.setState({ isShowMintNFT: true });
+                  }}
+                >
+                  铸造NFT
+                </Button>
+              </Menu.Item>
+              <Menu.Item>
+                <Button
+                  icon={<SettingFilled />}
+                  value="large"
+                  type="primary"
+                  onClick={() => {
+                    this.resetAll();
+                    console.log("click showMyNFT");
+                    this.setState({ isShowMyNFT: true });
+                  }}
+                >
+                  我拥有的NFT
+                </Button>
+              </Menu.Item>
+              <Menu.Item>
+                <Button
+                  icon={<SendOutlined />}
+                  value="large"
+                  type="primary"
+                  onClick={() => {
+                    this.resetAll();
+                    console.log("click showMyOngingNFT");
+                    this.setState({ isShowMyOngoingNFT: true });
+                  }}
+                >
+                  我的NFT拍卖详情
+                </Button>
+              </Menu.Item>
+              <Menu.Item>
+                <Button
+                  icon={<ShopOutlined />}
+                  value="large"
+                  type="primary"
+                  onClick={() => {
+                    this.resetAll();
+                    console.log("click show NFT market");
+                    this.setState({ isShowNFTMarket: true });
+                  }}
+                >
+                  NFT市场
+                </Button>
+              </Menu.Item>
+              <Menu.Item>
+                <Button
+                  icon={<StarOutlined />}
+                  value="large"
+                  type="primary"
+                  onClick={() => {
+                    this.resetAll();
+                    console.log("click bought NFT");
+                    this.setState({ isShowBuyNFT: true });
+                  }}
+                >
+                  我买入的NFT
+                </Button>
+              </Menu.Item>
+            </Menu>
+            <Divider />
+
+            <BackTop />
             {/* 下面是铸造NFT界面的内容 */}
             <div>
               {this.state.isShowMintNFT ? (
                 <div>
                   <div>
-                    <label id="file">Choose file to upload</label>
+                    <label id="file"></label>
                     <input
                       type="file"
                       ref="file"
@@ -536,7 +570,13 @@ class App extends Component {
                       multiple="multiple"
                     />
                   </div>
-                  <button
+                  <Divider />
+                  <Button
+                    spin
+                    icon={<UploadOutlined />}
+                    value="large"
+                    style={{ color: "black" }}
+                    type="primary"
                     onClick={() => {
                       var file = this.refs.file.files[0];
                       var reader = new FileReader();
@@ -553,13 +593,19 @@ class App extends Component {
                     }}
                   >
                     Submit
-                  </button>
-                  <button onClick={this.mintNFT}>mint</button>
+                  </Button>
+                  <Divider />
+                  <Button
+                    icon={<SketchOutlined spin />}
+                    type="primary"
+                    style={{ color: "pink" }}
+                    onClick={this.mintNFT}
+                  >
+                    mint
+                  </Button>
+                  <Divider />
                   {this.state.imgSrc ? (
                     <div>
-                      <h2>
-                        {"http://localhost:8080/ipfs/" + this.state.imgSrc}
-                      </h2>
                       <img
                         alt="testIPFS"
                         style={{
@@ -570,7 +616,9 @@ class App extends Component {
                       />
                     </div>
                   ) : (
-                    <p>please upload your NFT image</p>
+                    <div>
+                      <h3>please upload your NFT image</h3>
+                    </div>
                   )}
                 </div>
               ) : null}
