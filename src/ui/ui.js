@@ -10,6 +10,7 @@ const Home = (props) => (
       title="CZ's NFT Market"
       style={{ width: 600, height: 60 }}
       align="center"
+      href="https://github.com/Chan-ZJU/Auction-Dapp"
     />
     <Comment
       href="https://github.com/Chan-ZJU"
@@ -23,7 +24,12 @@ const Home = (props) => (
         />
       }
       datetime={"2021-11-5"}
-      content={<p>当前账户地址: {props.account}</p>}
+      content={
+        <div>
+          <p>当前账户地址: {props.account}</p>
+          <p>当前账户余额: {props.balance} ETH</p>
+        </div>
+      }
     ></Comment>
   </div>
 );

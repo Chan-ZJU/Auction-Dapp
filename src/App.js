@@ -1,7 +1,16 @@
 import React, { Component } from "react";
 import Home from "./ui/ui";
 import "./App.css";
-import { Button, Menu, Divider, BackTop } from "antd";
+import {
+  Button,
+  Menu,
+  Divider,
+  BackTop,
+  Image,
+  Input,
+  Card,
+  Descriptions,
+} from "antd";
 import "antd/dist/antd.css";
 import {
   HomeOutlined,
@@ -11,9 +20,14 @@ import {
   StarOutlined,
   UploadOutlined,
   SketchOutlined,
+  SketchCircleFilled,
+  FieldTimeOutlined,
+  SearchOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 const ipfsAPI = require("ipfs-api");
 const ipfs = ipfsAPI({ host: "localhost", port: "5001", protocol: "http" });
+const { Meta } = Card;
 
 let web3 = require("./util/initWeb3");
 let auctionInstance = require("./eth/auction");
@@ -46,6 +60,7 @@ class App extends Component {
     super(props);
     this.state = {
       account: null,
+      balance: null,
       imgSrc: null,
 
       price: null,
@@ -116,6 +131,8 @@ class App extends Component {
   //TODO:切换账户不会刷新，如果切换后直接mint，会提示需要账户信息
   async loadBlockchainData() {
     let accounts = await web3.eth.getAccounts();
+    let Balance = await web3.eth.getBalance(accounts[0]);
+    let balance = await web3.utils.fromWei(Balance, "ether");
 
     let showMyNFTRes = await auctionInstance.methods
       .showMyNFT(accounts[0])
@@ -170,6 +187,7 @@ class App extends Component {
 
     this.setState({
       account: accounts[0],
+      balance: balance,
 
       showMyNFT_num: showMyNFTnum,
       showMyNFT_IDs: showMyNFTIds,
@@ -248,7 +266,7 @@ class App extends Component {
 
   showMyNFT = () => {
     let res = [];
-    for (let i = 0; i < this.state.showMyNFT_num; i++) {
+    for (let i = this.state.showMyNFT_num - 1; i >= 0; i--) {
       res.push({
         NFT_ID: this.state.showMyNFT_IDs[i],
         URI: this.state.showMyNFT_URIs[i],
@@ -259,48 +277,61 @@ class App extends Component {
 
     return (
       <div>
-        {res.map((term) => (
-          <div>
-            <img
-              style={{ height: 180, width: 320 }}
-              alt="NFT"
-              src={"http://localhost:8080/ipfs/" + term.URI}
-            />
-            {!term.isAuctioned ? (
-              <form onSubmit={this.createAuction.bind(this, term)}>
-                <label>
-                  拍卖起价（ether）:
-                  <input
-                    id="price"
-                    type="number"
-                    step="0.000000000000000001"
-                    name="price"
-                    onChange={this.handleChange}
-                    ref={(input) => {
-                      this.start_price = input;
-                    }}
-                  />
-                </label>
-                <br />
-                <label>
-                  持续时间（秒）：
-                  <input
-                    id="time"
-                    type="number"
-                    step="0.01"
-                    name="time"
-                    onChange={this.handleChange}
-                    ref={(input) => {
-                      this.time = input;
-                    }}
-                  />
-                </label>
-                <input type="submit" value="拍卖" />
-              </form>
-            ) : null}
-            <Divider />
-          </div>
-        ))}
+        <Card>
+          {res.map((term) => (
+            <div>
+              <Image
+                height={180}
+                alt="NFT"
+                src={"http://localhost:8080/ipfs/" + term.URI}
+              />
+              {!term.isAuctioned ? (
+                <form onSubmit={this.createAuction.bind(this, term)}>
+                  <label>
+                    拍卖起价:
+                    <Input
+                      style={{ width: 180 }}
+                      prefix={<SketchCircleFilled />}
+                      suffix="ETH"
+                      size="large"
+                      id="price"
+                      type="number"
+                      step="0.000000000000000001"
+                      name="price"
+                      onChange={this.handleChange}
+                      ref={(input) => {
+                        this.start_price = input;
+                      }}
+                    />
+                  </label>
+                  <br />
+                  <label>
+                    持续时间:
+                    <Input
+                      style={{ width: 180 }}
+                      prefix={<FieldTimeOutlined />}
+                      size="large"
+                      suffix="seconds"
+                      id="time"
+                      type="number"
+                      step="0.01"
+                      name="time"
+                      onChange={this.handleChange}
+                      ref={(input) => {
+                        this.time = input;
+                      }}
+                    />
+                  </label>
+                  <br />
+                  <p>
+                    <input type="submit" value="拍卖" />
+                  </p>
+                </form>
+              ) : null}
+              <Divider />
+            </div>
+          ))}
+        </Card>
       </div>
     );
   };
@@ -308,7 +339,7 @@ class App extends Component {
   showMyOngingNFT = () => {
     let res = [];
 
-    for (let i = 0; i < this.state.showMyOngingNFT_num; i++) {
+    for (let i = this.state.showMyOngingNFT_num - 1; i >= 0; i--) {
       res.push({
         URI: this.state.showMyOngingNFT_URIs[i],
         start_price: this.state.showMyOngingNFT_start_prices[i],
@@ -323,15 +354,28 @@ class App extends Component {
       <div>
         {res.map((term) => (
           <div>
-            <p>
-              起价: {web3.utils.fromWei(term.start_price, "ether")} ether
-              <br />
-              最高价: {web3.utils.fromWei(term.highest_price, "ether")} ether
-            </p>
-            <p>结束时间: {new Date(term.end_time * 1000).toString()}</p>
-            <p>{term.is_ended ? "已结束" : "未结束"}</p>
-            <img
-              style={{ height: 180, width: 320 }}
+            <Descriptions
+              bordered
+              style={{ width: 800 }}
+              size="small"
+              colum="2"
+            >
+              <Descriptions.Item label="起价">
+                {web3.utils.fromWei(term.start_price, "ether")} ETH
+              </Descriptions.Item>
+              <Descriptions.Item label="最高价">
+                {web3.utils.fromWei(term.highest_price, "ether")} ETH
+              </Descriptions.Item>
+              <Descriptions.Item label="结束时间">
+                {new Date(term.end_time * 1000).toString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="当前状况" align="center">
+                {term.is_ended ? "已结束" : "进行中"}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Image
+              height={180}
               alt="NFT"
               src={"http://localhost:8080/ipfs/" + term.URI}
             />
@@ -387,7 +431,7 @@ class App extends Component {
 
   showNFTMarket = () => {
     let res = [];
-    for (let i = 0; i < this.state.showMarketNFT_num; i++) {
+    for (let i = this.state.showMarketNFT_num - 1; i >= 0; i--) {
       res.push({
         URI: this.state.showMarketNFT_URIs[i],
         start_price: this.state.showMarketNFT_start_prices[i],
@@ -405,26 +449,47 @@ class App extends Component {
           <div>
             {!term.is_ended ? (
               <div>
-                <p>
-                  起价: {web3.utils.fromWei(term.start_price, "ether")} ether{" "}
-                  <br />
-                  最高价: {web3.utils.fromWei(term.highest_price, "ether")}{" "}
-                  ether
-                </p>
-                <p>结束时间: {new Date(term.end_time * 1000).toString()}</p>
-                <p>{term.is_ended ? "已结束" : "未结束"}</p>
-                <Button onClick={this.showHistory.bind(this, term)}>
+                <Descriptions
+                  bordered
+                  style={{ width: 800 }}
+                  size="small"
+                  colum="2"
+                >
+                  <Descriptions.Item label="起价">
+                    {web3.utils.fromWei(term.start_price, "ether")} ETH
+                  </Descriptions.Item>
+                  <Descriptions.Item label="最高价">
+                    {web3.utils.fromWei(term.highest_price, "ether")} ETH
+                  </Descriptions.Item>
+                  <Descriptions.Item label="结束时间">
+                    {new Date(term.end_time * 1000).toString()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="当前状况" align="center">
+                    {term.is_ended ? "已结束" : "进行中"}
+                  </Descriptions.Item>
+                </Descriptions>
+
+                <Button
+                  danger
+                  icon={<SearchOutlined />}
+                  onClick={this.showHistory.bind(this, term)}
+                >
                   流转信息
                 </Button>
-                <img
-                  style={{ height: 180, width: 320 }}
+                <p />
+                <Image
+                  height={180}
                   alt="NFT"
                   src={"http://localhost:8080/ipfs/" + term.URI}
                 />
                 <form onSubmit={this.bid.bind(this, term)}>
                   <label>
                     出价:
-                    <input
+                    <Input
+                      style={{ width: 180 }}
+                      prefix={<SketchCircleFilled />}
+                      suffix="ETH"
+                      size="large"
                       id="price"
                       type="number"
                       step="0.000000000000000001"
@@ -437,7 +502,11 @@ class App extends Component {
                   </label>
                   <input type="submit" value="确认参与" />
                 </form>
-                <Button onClick={this.endAuction.bind(this, term)}>
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={this.endAuction.bind(this, term)}
+                >
                   认领NFT
                 </Button>
                 <Divider />
@@ -451,7 +520,7 @@ class App extends Component {
 
   showBoughtNFT = () => {
     let res = [];
-    for (let i = 0; i < this.state.showBuyNFT_URI.length; i++) {
+    for (let i = this.state.showBuyNFT_URI.length - 1; i >= 0; i--) {
       res.push({
         price: this.state.showBuyNFT_price[i],
         URI: this.state.showBuyNFT_URI[i],
@@ -462,12 +531,21 @@ class App extends Component {
       <div>
         {res.map((term) => (
           <div>
-            <p>买入价格: {web3.utils.fromWei(term.price, "ether")} ether</p>
-            <img
-              style={{ height: 180, width: 320 }}
-              alt="NFT"
-              src={"http://localhost:8080/ipfs/" + term.URI}
-            />
+            <Card
+              hoverable
+              style={{ width: 400 }}
+              cover={
+                <Image
+                  alt="NFT"
+                  src={"http://localhost:8080/ipfs/" + term.URI}
+                />
+              }
+            >
+              <Meta
+                title="买入价格"
+                description={web3.utils.fromWei(term.price, "ether") + " ETH"}
+              />
+            </Card>
             <Divider />
           </div>
         ))}
@@ -478,7 +556,7 @@ class App extends Component {
   render() {
     return (
       <div class="topMenu">
-        <Home account={this.state.account} />
+        <Home account={this.state.account} balance={this.state.balance} />
         <div>
           <div align="center">
             <Menu theme="light" mode="horizontal" style={{ width: 900 }}>
@@ -572,7 +650,6 @@ class App extends Component {
                   </div>
                   <Divider />
                   <Button
-                    spin
                     icon={<UploadOutlined />}
                     value="large"
                     style={{ color: "black" }}
@@ -595,23 +672,11 @@ class App extends Component {
                     Submit
                   </Button>
                   <Divider />
-                  <Button
-                    icon={<SketchOutlined spin />}
-                    type="primary"
-                    style={{ color: "pink" }}
-                    onClick={this.mintNFT}
-                  >
-                    mint
-                  </Button>
-                  <Divider />
                   {this.state.imgSrc ? (
                     <div>
-                      <img
+                      <Image
                         alt="testIPFS"
-                        style={{
-                          height: 120,
-                          width: 160,
-                        }}
+                        height={180}
                         src={"http://localhost:8080/ipfs/" + this.state.imgSrc}
                       />
                     </div>
@@ -620,6 +685,17 @@ class App extends Component {
                       <h3>please upload your NFT image</h3>
                     </div>
                   )}
+                  <Divider />
+                  <Button
+                    danger
+                    shape="round"
+                    icon={<SketchOutlined spin />}
+                    type="primary"
+                    style={{ color: "pink" }}
+                    onClick={this.mintNFT}
+                  >
+                    mint
+                  </Button>
                 </div>
               ) : null}
             </div>
@@ -635,9 +711,20 @@ class App extends Component {
             </div>
             {/* 下面是NFT流转信息的内容 */}
             <div>
-              {this.state.isShowHistory
-                ? this.state.history.map((history) => <p>{history}</p>)
-                : null}
+              {this.state.isShowHistory ? (
+                <Descriptions
+                  title="流转信息"
+                  layout="vertical"
+                  bordered
+                  style={{ width: 390 }}
+                >
+                  <Descriptions.Item>
+                    {this.state.history.map((history) => (
+                      <p>{history}</p>
+                    ))}
+                  </Descriptions.Item>
+                </Descriptions>
+              ) : null}
             </div>
             {/* 下面是买入NFT的内容 */}
             <div>{this.state.isShowBuyNFT ? this.showBoughtNFT() : null}</div>
