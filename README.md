@@ -5,6 +5,7 @@ An Auction Dapp on ethereum for NFT
   - [Pre-installed (You **must** first Download the followin dependencies)](#pre-installed-you-must-first-download-the-followin-dependencies)
   - [How to Run](#how-to-run)
   - [Built With](#built-with)
+  - [TODO](#todo)
   - [Project Display](#project-display)
 
 ## Pre-installed (You **must** first Download the followin dependencies)
@@ -69,6 +70,10 @@ npm start
 - AntDesign
 - Truffle
 - Ganache
+
+## TODO
+- [x] migrate to a testnet instead of a local network
+- [x] use cloud NFT storage like `pinata` instead of running a local ipfs node
   
 ## Project Display
 - Mint NFT 
