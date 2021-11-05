@@ -21,7 +21,10 @@ An Auction Dapp on ethereum for NFT
 1. clone the repository
 ```bash
 git clone https://github.com/Chan-ZJU/Auction-Dapp.git
-(or git clone git@github.com:Chan-ZJU/Auction-Dapp.git)
+```
+or
+```bash
+git clone git@github.com:Chan-ZJU/Auction-Dapp.git
 ```
 
 2. Then start ganache to run a local net (make sure the port num is 8545)
