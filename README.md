@@ -1,7 +1,7 @@
 # CZ's Auction Dapp for NFT
 > An Auction Dapp on ethereum for NFT
 
-See [Video Demonstration on BiliBili](https://www.bilibili.com/video/BV1GF411a7UV){:target="_blank"}
+See [Video Demonstration on BiliBili](https://www.bilibili.com/video/BV1GF411a7UV)
 
 - [CZ's Auction Dapp for NFT](#czs-auction-dapp-for-nft)
   - [Pre-installed (You **must** first Download the followin dependencies)](#pre-installed-you-must-first-download-the-followin-dependencies)
